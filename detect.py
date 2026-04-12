@@ -78,8 +78,8 @@ COOLDOWN_SEC = 6.0
 # Background subtractor sensitivity.  Higher = less sensitive (fewer false hits).
 MOG2_THRESHOLD = 60
 
-# Camera device index (0 = default webcam).
-CAMERA_ID = 0
+# Camera device index (0 = default webcam, 1 = external/secondary webcam).
+CAMERA_ID = 1
 
 
 # ─── Detection Thread ────────────────────────────────────────────────────────-
