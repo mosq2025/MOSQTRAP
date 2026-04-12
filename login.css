@@ -1,0 +1,230 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Segoe UI", sans-serif;
+}
+
+body {
+  height: 100vh;
+}
+
+/* MAIN LAYOUT */
+.container {
+  display: flex;
+  height: 100vh;
+}
+
+/* LEFT SIDE */
+.left-panel {
+  width: 40%;
+  background: #ebf8e9;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.left-panel h1 {
+  position: absolute;
+  top: 40px;
+  font-size: 26px;
+  letter-spacing: 2px;
+}
+
+.lantern {
+  width: 650px;
+  transform-origin: center;
+  will-change: transform;
+  transition: transform 160ms cubic-bezier(.2,.9,.2,1);
+}
+
+/* RIGHT SIDE */
+.right-panel {
+  width: 60%;
+  background: #eefaf0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-card {
+  background: #fff;
+  padding: 35px;
+  width: 360px;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+}
+
+.login-card h2 {
+  text-align: center;
+  color: #2e7d32;
+}
+
+.subtitle {
+  text-align: center;
+  font-size: 12px;
+  margin-bottom: 20px;
+  color: #777;
+}
+
+.login-card input {
+  width: 100%;
+  padding: 10px;
+  margin: 8px 0;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+.options {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  margin: 10px 0;
+  align-items: center;
+}
+
+.options label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.options label input[type="checkbox"] {
+  width: auto;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+}
+
+.options a {
+  color: #2e7d32;
+  text-decoration: none;
+}
+
+button {
+  width: 100%;
+  padding: 10px;
+  background: #2e7d32;
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+button:hover {
+  background: #256428;
+}
+
+.footer-text {
+  text-align: center;
+  font-size: 12px;
+  margin-top: 15px;
+}
+
+.footer-text a {
+  color: #2e7d32;
+  text-decoration: none;
+}
+
+/* ===== MOBILE RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .container {
+    flex-direction: column;
+    height: auto;
+    min-height: 100vh;
+  }
+
+  .left-panel {
+    width: 100%;
+    height: 220px;
+    overflow: hidden;
+  }
+
+  .left-panel h1 {
+    top: 20px;
+    font-size: 22px;
+  }
+
+  .lantern {
+    width: 280px;
+  }
+
+  .right-panel {
+    width: 100%;
+    flex: 1;
+    padding: 24px 16px;
+    align-items: flex-start;
+  }
+
+  .login-card {
+    width: 100%;
+    max-width: 400px;
+    padding: 24px 20px;
+  }
+}
+
+/* =========================================
+   WELCOME LOADING OVERLAY
+   ========================================= */
+.welcome-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: #ebf8e9; /* Matching the left panel color for smooth transition */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  transition: opacity 0.8s ease-out, visibility 0.8s ease-out;
+}
+
+.welcome-overlay.fade-out {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.loader-content {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.welcome-text {
+  font-size: 28px;
+  color: #2e7d32;
+  letter-spacing: 2px;
+  font-weight: bold;
+  animation: pulse 1.5s infinite;
+}
+
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 5px solid rgba(46, 125, 50, 0.2);
+  border-top-color: #2e7d32;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.loading-text {
+  font-size: 16px;
+  color: #333;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+  0% { opacity: 0.7; transform: scale(0.98); }
+  50% { opacity: 1; transform: scale(1.02); }
+  100% { opacity: 0.7; transform: scale(0.98); }
+}
+

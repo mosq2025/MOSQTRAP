@@ -1,0 +1,8 @@
+# MOSTRAP Python Detection Server — dependencies
+flask
+flask-cors
+flask-socketio
+opencv-python
+numpy
+supabase
+python-dotenv

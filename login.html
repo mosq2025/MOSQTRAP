@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MOSTRAP Login</title>
+  <link rel="stylesheet" href="login.css" />
+</head>
+<body>
+
+<!-- Welcome Loading Overlay -->
+<div id="welcomeOverlay" class="welcome-overlay">
+  <div class="loader-content">
+    <h1 class="welcome-text">Welcome to MOSTRAP</h1>
+    <div class="spinner"></div>
+    <p class="loading-text">Preparing your dashboard...</p>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- LEFT PANEL -->
+  <div class="left-panel">
+    <h1>MOSTRAP</h1>
+
+    <!-- Lantern Image -->
+    <img src="icon/ChatGPT_Image_Jan_30__2026__05_15_22_PM-removebg-preview.png" alt="Mosquito Trap" class="lantern">
+
+    <!-- Flying Mosquitoes will be created by JavaScript -->
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div class="right-panel">
+    <div class="login-card">
+      <h2>MOSTRAP</h2>
+      <p class="subtitle">Monitoring & Surveillance & Tracking Platform</p>
+
+      <input type="email" id="emailInput" placeholder="Email Address">
+      <input type="password" id="passwordInput" placeholder="Password">
+
+      <div class="options">
+        <label>
+          <input type="checkbox" id="keepLoggedIn"> Keep me logged in
+        </label>
+        <a href="signup.html">Create account</a>
+      </div>
+
+      <button id="loginBtn">Access Dashboard</button>
+
+      <p class="footer-text">
+        New to MOSTRAP? <a href="signup.html">Create account</a><br>
+        <small>(Supabase used for storing accounts)</small>
+      </p>
+    </div>
+  </div>
+
+</div>
+
+<!-- Supabase JS Library -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="login.js"></script>
+</body>
+</html>
