@@ -37,9 +37,27 @@ document.addEventListener('DOMContentLoaded', function () {
 
   async function fetchHistoryTable() {
     try {
-      const res = await fetch("http://localhost:5000/api/history");
-      if (!res.ok) throw new Error("Server not responding");
-      const rawData = await res.json();
+      if (!window.supabaseClient) {
+        console.warn("[History] Supabase client not initialized.");
+        return;
+      }
+
+      const { data, error } = await supabaseClient.from('detections').select('*');
+      if (error) throw error;
+
+      // Group by date (YYYY-MM-DD)
+      const rawData = {};
+      data.forEach(row => {
+        if (!row.timestamp) return;
+        const dateStr = row.timestamp.split('T')[0];
+        if (!rawData[dateStr]) {
+          rawData[dateStr] = { mosquitoes: 0, lastUpdated: row.timestamp };
+        }
+        rawData[dateStr].mosquitoes++;
+        if (row.timestamp > rawData[dateStr].lastUpdated) {
+          rawData[dateStr].lastUpdated = row.timestamp;
+        }
+      });
       
       const dates = Object.keys(rawData).sort((a, b) => new Date(b) - new Date(a));
       historyData = [];
@@ -68,11 +86,15 @@ document.addEventListener('DOMContentLoaded', function () {
         
         const risk = classifyByThreeDay(threeDayTotal);
         
+        // Format last updated nice string
+        const lu = new Date(item.lastUpdated);
+        const lastUpdatedStr = lu.toLocaleDateString() + ', ' + lu.toLocaleTimeString();
+
         historyData.push({
           date: dateStr,
           mosquitoes: threeDayTotal > 0 ? threeDayTotal : '—',
           riskAssessment: risk,
-          lastUpdated: item.lastUpdated || ''
+          lastUpdated: lastUpdatedStr
         });
         
         const tr = document.createElement('tr');
@@ -80,7 +102,7 @@ document.addEventListener('DOMContentLoaded', function () {
           <td>${dateStr}</td>
           <td>${threeDayTotal}</td>
           <td>${risk}</td>
-          <td>${item.lastUpdated || ''}</td>
+          <td>${lastUpdatedStr}</td>
         `;
         tbody.appendChild(tr);
       });
@@ -100,12 +122,18 @@ document.addEventListener('DOMContentLoaded', function () {
       }
 
     } catch (e) {
-      console.warn("[History] Could not fetch real data from server:", e);
+      console.warn("[History] Could not fetch real data from Supabase:", e);
     }
   }
 
   fetchHistoryTable();
-  setInterval(fetchHistoryTable, 5000);
+  // Listen for realtime inserts instead of polling
+  if (window.supabaseClient) {
+    supabaseClient.channel('history-realtime')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'detections' }, () => {
+        fetchHistoryTable(); // Refresh table
+      }).subscribe();
+  }
 
   function rowMatches(row, q, start, end) {
     const dateText = row.cells[0].textContent.trim();

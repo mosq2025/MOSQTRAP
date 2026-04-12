@@ -602,17 +602,12 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /* ============================================================
-   PYTHON BACKEND — SocketIO Integration
-   Connects to detect.py running on localhost:5000.
-   When Python is connected:
-     • The random simulation timer is PAUSED so it cannot
-       overwrite the real camera count.
-     • Every detection event from Python sets the count
-       directly — matching exactly what the camera shows.
-   When Python is offline the simulation runs as normal.
+   SUPABASE CLOUD INTEGRATION
+   Connects to Supabase Realtime instead of Localhost.
+   This allows the Vercel dashboard to work from ANY device.
    ============================================================ */
 
-(function initPythonBackend() {
+(function initCloudBackend() {
   // ── Status pill ──────────────────────────────────────────────────────────────
   const indicator = document.createElement('div');
   indicator.id = 'pyStatus';
@@ -632,58 +627,92 @@ document.addEventListener('DOMContentLoaded', () => {
     if (autohide) setTimeout(() => { indicator.style.display = 'none'; }, 5000);
   }
 
-  // ── Connect ──────────────────────────────────────────────────────────────────
-  let socket;
-  try {
-    socket = io('http://localhost:5000', {
-      transports: ['polling', 'websocket'],
-      reconnectionAttempts: 10,
-      reconnectionDelay: 3000,
-      timeout: 4000,
-    });
-  } catch (e) {
-    return; // Socket.IO CDN not loaded — silently skip
+  // Ensure Supabase is loaded
+  if (!window.supabase || !supabaseClient) {
+    setStatus('Supabase not configured', '#e03131');
+    return;
   }
 
-  // ── Connection events ────────────────────────────────────────────────────────
-  socket.on('connect', () => {
-    console.log('[MOSTRAP] Python backend connected — pausing simulation');
-    // PAUSE the random simulation so it cannot overwrite Python counts
-    clearInterval(simulationInterval);
-    simulationInterval = null;
-    setStatus('🟢 Camera detection active', '#4dda7a');
-  });
+  let currentTodayCount = 0;
+  let currentWindowTotal = 0;
 
-  socket.on('connect_error', () => {
-    // Python not running
-    setStatus('Python backend offline — using local data', '#f0a84a');
-  });
+  // Initialize data on load
+  async function fetchInitialData() {
+    try {
+      // Pause generic simulation since we are checking cloud
+      clearInterval(simulationInterval);
+      simulationInterval = null;
 
-  socket.on('disconnect', () => {
-    // Python disconnected
-    setStatus('Python backend disconnected', '#e03131');
-  });
+      const today = new Date();
+      const threeDaysAgo = new Date(today);
+      threeDaysAgo.setDate(today.getDate() - 3);
 
-  // ── Sync on initial connect — show current Python session count ──────────────
-  socket.on('init', (data) => {
-    refreshDashboardUI(data.count, data.three_day_total);
-  });
+      const todayStr = today.toISOString().split('T')[0];
+      const threeDaysAgoStr = threeDaysAgo.toISOString().split('T')[0];
 
-  // ── Live detection from Python camera ────────────────────────────────────────
-  socket.on('mosquito_detected', (data) => {
-    const windowTotal = data.three_day_total || 0;
-    const species = data.species || 'mosquito';
-    console.log(`[MOSTRAP] Detection - camera: ${data.count}, species: ${species}, 3-day total: ${windowTotal}`);
+      // Fetch last 3 days of detections
+      const { data, error } = await supabaseClient
+        .from('detections')
+        .select('*')
+        .gte('timestamp', threeDaysAgoStr + 'T00:00:00');
 
-    // MOSQUITO COUNT matches camera exactly
-    refreshDashboardUI(data.count, windowTotal);
-    flashCountBox();
-    showDetectionToast(data, data.count, windowTotal);
-  });
+      if (error) {
+        console.error("Supabase fetch error:", error);
+        setStatus('Cloud connect error', '#e03131');
+        return;
+      }
+      
+      setStatus('🟢 Connected to Cloud', '#4dda7a');
 
-  socket.on('count_reset', () => {
-    refreshDashboardUI(0, 0);
-  });
+      // Calculate totals
+      let tCount = 0;
+      let wTotal = 0;
+
+      data.forEach(d => {
+        wTotal++;
+        if (d.timestamp && d.timestamp.startsWith(todayStr)) {
+          tCount++;
+        }
+      });
+
+      currentTodayCount = tCount;
+      currentWindowTotal = wTotal;
+
+      refreshDashboardUI(currentTodayCount, currentWindowTotal);
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  fetchInitialData();
+
+  // ── Live detection from Cloud (Supabase Realtime) ────────────────────────────
+  const detectionsChannel = supabaseClient.channel('custom-insert-channel')
+    .on(
+      'postgres_changes',
+      { event: 'INSERT', schema: 'public', table: 'detections' },
+      (payload) => {
+        console.log('New detection received:', payload);
+        const newRecord = payload.new;
+        
+        currentTodayCount++;
+        currentWindowTotal++;
+        
+        const species = newRecord.species || 'mosquito';
+        const snapshotUrl = newRecord.snapshot_url;
+
+        // MOSQUITO COUNT exactly syncs with db
+        refreshDashboardUI(currentTodayCount, currentWindowTotal);
+        flashCountBox();
+        
+        const toastData = {
+          species: species,
+          snapshot: snapshotUrl
+        };
+        showDetectionToast(toastData, currentTodayCount, currentWindowTotal);
+      }
+    )
+    .subscribe();
 
   // ── Core UI update ────────────────────────────────────────────────────────────
   // sessionCount  = Python's session count (matches camera window)
@@ -775,7 +804,7 @@ document.addEventListener('DOMContentLoaded', () => {
     `;
 
     const snapshotLink = data.snapshot
-      ? `<a href="${data.snapshot.startsWith('http') ? data.snapshot : `http://localhost:5000/snapshots/${data.snapshot}`}"
+      ? `<a href="${data.snapshot}"
             target="_blank"
             style="color:#4dda7a;text-decoration:none;font-size:12px;">
             📷 View snapshot →
