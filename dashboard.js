@@ -672,7 +672,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // ── Live detection from Python camera ────────────────────────────────────────
   socket.on('mosquito_detected', (data) => {
     const windowTotal = data.three_day_total || 0;
-    console.log(`[MOSTRAP] Detection - camera: ${data.count}, 3-day total: ${windowTotal}`);
+    const species = data.species || 'mosquito';
+    console.log(`[MOSTRAP] Detection - camera: ${data.count}, species: ${species}, 3-day total: ${windowTotal}`);
 
     // MOSQUITO COUNT matches camera exactly
     refreshDashboardUI(data.count, windowTotal);
@@ -750,13 +751,24 @@ document.addEventListener('DOMContentLoaded', () => {
   // ── Toast notification with snapshot link ───────────────────────────────────--
   function showDetectionToast(data, todayCount, windowTotal) {
     const toast = document.createElement('div');
+    const species = data.species || 'mosquito';
+
+    // Color-code by species
+    const speciesColors = {
+      'Aedes aegypti':           '#e03131',
+      'Aedes albopictus':        '#de6d2b',
+      'Culex quinquefasciatus':  '#f0a84a',
+      'anopheles':               '#7c3aed',
+    };
+    const accentColor = speciesColors[species] || '#e03131';
+
     toast.style.cssText = `
       position: fixed; bottom: 24px; right: 24px;
       background: #1a1a1a; color: #fff;
       padding: 14px 18px; border-radius: 10px;
       font-size: 14px; font-weight: 600;
       box-shadow: 0 8px 30px rgba(0,0,0,0.35);
-      border-left: 4px solid #e03131;
+      border-left: 4px solid ${accentColor};
       transform: translateY(20px); opacity: 0;
       transition: all 0.3s ease; z-index: 9999; max-width: 320px;
       display: flex; flex-direction: column; gap: 4px;
@@ -771,7 +783,7 @@ document.addEventListener('DOMContentLoaded', () => {
       : '';
 
     toast.innerHTML = `
-      <span>🦟 Mosquito detected!</span>
+      <span>🦟 <strong style="color:${accentColor}">${species}</strong> detected!</span>
       <span style="font-size:12px;font-weight:400;color:#ccc">Today: <strong style="color:#fff">${todayCount}</strong> &nbsp;|&nbsp; 3-day total: <strong style="color:#f0a84a">${windowTotal}</strong></span>
       ${snapshotLink}
     `;

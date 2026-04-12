@@ -1,10 +1,9 @@
 import cv2
-import numpy as np
 import os
 import sys
 import time
 import threading
-import json
+import torch
 from dotenv import load_dotenv
 from supabase import create_client, Client
 from datetime import datetime, timedelta
@@ -45,7 +44,6 @@ def get_three_day_total():
     if not supabase:
         return 0
     try:
-        # 3-day window: Today plus the 2 previous days
         start_date = (datetime.now() - timedelta(days=2)).replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
         res = supabase.table("detections").select("id").gte("timestamp", start_date).execute()
         return len(res.data)
@@ -55,36 +53,42 @@ def get_three_day_total():
 
 
 # ─── Tunable Parameters ───────────────────────────────────────────────────────
-# Adjust these to match your camera setup.
 
-# Minimum area (px²) to consider a contour as a possible mosquito.
-# Increase if large background objects keep triggering.
-MIN_AREA = 100
+# YOLO confidence threshold (0.0–1.0). Only detections above this are counted.
+CONFIDENCE_THRESHOLD = 0.25
 
-# Maximum area (px²). A mosquito up close won't be huge.
-MAX_AREA = 2500
-
-# Number of consecutive frames a contour must appear before we count it.
-# Higher = more accurate but slightly slower to register.
+# Number of consecutive frames a detection must appear before we count it.
 PERSISTENCE_FRAMES = 4
-
-# How dark (0-255) the detected region must be relative to the frame average.
-# A value of 20 means the patch must be at least 20 units darker than the mean.
-DARKNESS_MARGIN = 15
 
 # Seconds between accepted detections to avoid double-counting.
 COOLDOWN_SEC = 6.0
 
-# Background subtractor sensitivity.  Higher = less sensitive (fewer false hits).
-MOG2_THRESHOLD = 60
-
-# Camera device index (0 = default webcam, 1 = external/secondary webcam).
+# Camera device index (0 = default/built-in webcam, 1 = external/secondary webcam).
 CAMERA_ID = 1
+
+# Path to your trained YOLO model weights.
+MODEL_PATH = os.path.join(os.path.dirname(__file__), "best.pt")
 
 
 # ─── Detection Thread ────────────────────────────────────────────────────────-
 def run_detection():
     global detection_count, detection_log, is_running
+
+    # Load YOLOv5 model via torch.hub
+    try:
+        model = torch.hub.load(
+            'ultralytics/yolov5',
+            'custom',
+            path=MODEL_PATH,
+            force_reload=False,
+            verbose=False
+        )
+        model.conf = CONFIDENCE_THRESHOLD  # set confidence threshold
+        print(f"[INFO] YOLOv5 model loaded from: {MODEL_PATH}")
+    except Exception as e:
+        print(f"[ERROR] Failed to load YOLO model: {e}")
+        is_running = False
+        return
 
     cap = cv2.VideoCapture(CAMERA_ID)
     if not cap.isOpened():
@@ -92,23 +96,14 @@ def run_detection():
         is_running = False
         return
 
-    fgbg = cv2.createBackgroundSubtractorMOG2(
-        history=400,
-        varThreshold=MOG2_THRESHOLD,
-        detectShadows=False,
-    )
-
-    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
-
-    # --- Persistence tracker ---
-    # Maps a simple bucket key → consecutive frame count with a contour
-    consecutive_hits = 0   # how many frames in a row had a qualifying contour
+    consecutive_hits = 0
     last_detection_time = 0.0
+    last_box = None    # store last detected bounding box for drawing
+    last_label = "mosquito"  # store detected species/variant name
 
     is_running = True
-    print("[INFO] Camera started. Detection running.")
-    print(f"[INFO] Min area={MIN_AREA}px²  Max area={MAX_AREA}px²  "
-          f"Persistence={PERSISTENCE_FRAMES} frames  Cooldown={COOLDOWN_SEC}s")
+    print("[INFO] Camera started. YOLO detection running.")
+    print(f"[INFO] Confidence≥{CONFIDENCE_THRESHOLD}  Persistence={PERSISTENCE_FRAMES} frames  Cooldown={COOLDOWN_SEC}s")
 
     while is_running:
         ret, frame = cap.read()
@@ -116,70 +111,44 @@ def run_detection():
             time.sleep(0.05)
             continue
 
-        # ── Pre-processing ────────────────────────────────────────────────────
-        blurred = cv2.GaussianBlur(frame, (5, 5), 0)
-        fg_mask = fgbg.apply(blurred)
-
-        # Clean noise: erode then dilate
-        fg_mask = cv2.morphologyEx(fg_mask, cv2.MORPH_OPEN, kernel, iterations=1)
-        fg_mask = cv2.dilate(fg_mask, kernel, iterations=2)
-
-        # ── Contour Scan ─────────────────────────────────────────────────────
-        contours, _ = cv2.findContours(
-            fg_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-        )
-
-        # Frame-wide mean brightness (used for darkness check)
-        gray  = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        frame_mean = float(gray.mean())
+        # ── YOLOv5 Inference ─────────────────────────────────────────────────
+        results = model(frame)
+        # results.xyxy[0] → tensor of [x1, y1, x2, y2, conf, class]
+        dets = results.xyxy[0].cpu().numpy()
 
         found_qualifying = False
 
-        for cnt in contours:
-            area = cv2.contourArea(cnt)
-            if not (MIN_AREA < area < MAX_AREA):
-                continue
-
-            # ── Darkness check ────────────────────────────────────────────────
-            x, y, w, h = cv2.boundingRect(cnt)
-
-            # Add a small margin around the contour for sampling
-            x0, y0 = max(x, 0), max(y, 0)
-            x1, y1 = min(x + w, gray.shape[1]), min(y + h, gray.shape[0])
-            patch = gray[y0:y1, x0:x1]
-
-            if patch.size == 0:
-                continue
-
-            patch_mean = float(patch.mean())
-
-            # The region must be noticeably darker than the overall frame
-            if frame_mean - patch_mean < DARKNESS_MARGIN:
-                continue   # Too bright — skip (light reflection, dust, etc.)
-
-            # ── Qualifying contour found ──────────────────────────────────────
+        if len(dets) > 0:
+            # Take the highest-confidence detection
+            best_idx = int(dets[:, 4].argmax())
+            x1, y1, x2, y2 = int(dets[best_idx][0]), int(dets[best_idx][1]), int(dets[best_idx][2]), int(dets[best_idx][3])
+            best_conf = float(dets[best_idx][4])
+            cls_idx = int(dets[best_idx][5])
+            species = model.names[cls_idx] if model.names else "mosquito"
+            last_box = (x1, y1, x2, y2)
+            last_label = species
             found_qualifying = True
 
-            # Draw bounding box for visual feedback (green while tracking,
-            # red at the moment of confirmed count)
+            # Draw tracking box (green while building streak)
             color = (0, 200, 0)
-            cv2.rectangle(frame, (x, y), (x + w, y + h), color, 2)
+            cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
             cv2.putText(
                 frame,
-                f"tracking ({consecutive_hits + 1}/{PERSISTENCE_FRAMES})",
-                (x, max(y - 6, 14)),
+                f"{species} ({consecutive_hits + 1}/{PERSISTENCE_FRAMES}) {best_conf:.0%}",
+                (x1, max(y1 - 8, 14)),
                 cv2.FONT_HERSHEY_SIMPLEX,
                 0.45,
                 color,
                 1,
             )
-            break  # Only handle one qualifying contour per frame
 
         # ── Update persistence counter ────────────────────────────────────────
         if found_qualifying:
             consecutive_hits += 1
         else:
-            consecutive_hits = 0   # reset — object disappeared
+            consecutive_hits = 0
+            last_box = None
+            last_label = "mosquito"
 
         now = time.time()
 
@@ -189,53 +158,56 @@ def run_detection():
             and (now - last_detection_time) >= COOLDOWN_SEC
         ):
             last_detection_time = now
-            consecutive_hits    = 0   # reset after counting
+            consecutive_hits    = 0
             detection_count    += 1
 
-            # Mark the bounding box red on the saved snapshot
-            if found_qualifying:
-                cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255), 2)
+            # Draw red confirmed box on snapshot
+            if last_box:
+                x1, y1, x2, y2 = last_box
+                cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 0, 255), 2)
                 cv2.putText(
                     frame,
-                    f"DETECTED #{detection_count}",
-                    (x, max(y - 6, 14)),
+                    f"#{detection_count} {last_label}",
+                    (x1, max(y1 - 8, 14)),
                     cv2.FONT_HERSHEY_SIMPLEX,
-                    0.55,
+                    0.6,
                     (0, 0, 255),
                     2,
                 )
 
-            # Prepare snapshot for Supabase (no local save)
+            # Upload snapshot to Supabase
             ts_str   = datetime.now().strftime("%Y%m%d_%H%M%S_%f")[:-3]
             filename = f"mosquito_{ts_str}.jpg"
 
             public_url = None
             if supabase:
                 try:
-                    # Encode frame to JPEG in memory
                     is_success, buffer = cv2.imencode(".jpg", frame)
                     if is_success:
-                        res = supabase.storage.from_("snapshots").upload(
+                        supabase.storage.from_("snapshots").upload(
                             path=filename,
                             file=buffer.tobytes(),
                             file_options={"content-type": "image/jpeg"}
                         )
                         public_url = supabase.storage.from_("snapshots").get_public_url(filename)
-                    
+
                     supabase.table("detections").insert({
                         "timestamp": datetime.now().isoformat(),
                         "mosquito_count": detection_count,
                         "snapshot_url": public_url,
-                        "local_filename": filename
+                        "local_filename": filename,
+                        "species": last_label
                     }).execute()
                     print(f"[INFO] Uploaded {filename} to Supabase")
                 except Exception as e:
                     print(f"[ERROR] Supabase upload failed: {e}")
+
             event = {
                 "id":        detection_count,
                 "timestamp": datetime.now().isoformat(),
                 "snapshot":  public_url if public_url else filename,
                 "count":     detection_count,
+                "species":   last_label,
                 "three_day_total": get_three_day_total()
             }
             detection_log.insert(0, event)
@@ -244,14 +216,14 @@ def run_detection():
 
             socketio.emit("mosquito_detected", event)
             print(
-                f"[DETECTION] #{detection_count} confirmed at "
+                f"[DETECTION] #{detection_count} [{last_label}] confirmed at "
                 f"{event['timestamp']}  ->  {filename}"
             )
 
         # ── Overlay status on frame ───────────────────────────────────────────
         cv2.putText(
             frame,
-            f"Mosquitoes: {detection_count}  |  Hit streak: {consecutive_hits}/{PERSISTENCE_FRAMES}",
+            f"Mosquitoes: {detection_count}  |  Streak: {consecutive_hits}/{PERSISTENCE_FRAMES}",
             (10, 28),
             cv2.FONT_HERSHEY_SIMPLEX,
             0.65,
@@ -259,7 +231,7 @@ def run_detection():
             2,
         )
 
-        cv2.imshow("MOSTRAP — Live Detection  (press Q to quit)", frame)
+        cv2.imshow("MOSTRAP — YOLO Detection  (press Q to quit)", frame)
 
         if cv2.waitKey(1) & 0xFF == ord("q"):
             break
@@ -298,15 +270,14 @@ def api_history():
             daily_counts[dt_str]["mosquitoes"] += 1
             if row['timestamp'] > daily_counts[dt_str]["lastUpdated"]:
                 daily_counts[dt_str]["lastUpdated"] = row['timestamp']
-        
-        # Format dates nicely
+
         for d in daily_counts.values():
             try:
                 dt_obj = datetime.fromisoformat(d["lastUpdated"])
                 d["lastUpdated"] = dt_obj.strftime("%m/%d/%Y, %I:%M:%S %p")
             except Exception:
                 pass
-                
+
         return jsonify(daily_counts)
     except Exception as e:
         print("[ERROR] Supabase history API query failed:", e)
