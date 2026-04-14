@@ -661,7 +661,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setStatus('Cloud connect error', '#e03131');
         return;
       }
-      
+
       setStatus('🟢 Connected to Cloud', '#4dda7a');
 
       // Calculate totals
@@ -694,17 +694,17 @@ document.addEventListener('DOMContentLoaded', () => {
       (payload) => {
         console.log('New detection received:', payload);
         const newRecord = payload.new;
-        
+
         currentTodayCount++;
         currentWindowTotal++;
-        
+
         const species = newRecord.species || 'mosquito';
         const snapshotUrl = newRecord.snapshot_url;
 
         // MOSQUITO COUNT exactly syncs with db
         refreshDashboardUI(currentTodayCount, currentWindowTotal);
         flashCountBox();
-        
+
         const toastData = {
           species: species,
           snapshot: snapshotUrl
@@ -728,10 +728,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // RISK ASSESSMENT — based on 3-day window total
     let category, action;
-    if (windowTotal <= 6)       { category = 'Safe';                                    action = 'Routine Monitoring'; }
-    else if (windowTotal <= 15) { category = 'Needs Cleaning';                          action = 'Environmental Cleaning'; }
-    else if (windowTotal <= 30) { category = 'Needs Thorough Cleaning & Disinfecting';  action = 'Deep cleaning + larval control'; }
-    else                        { category = 'Subject for Fogging';                     action = 'Fogging + community-level intervention'; }
+    if (windowTotal <= 6) { category = 'Safe'; action = 'Routine Monitoring'; }
+    else if (windowTotal <= 15) { category = 'Needs Cleaning'; action = 'Environmental Cleaning'; }
+    else if (windowTotal <= 30) { category = 'Needs Thorough Cleaning & Disinfecting'; action = 'Deep cleaning + larval control'; }
+    else { category = 'Subject for Fogging'; action = 'Fogging + community-level intervention'; }
 
     const riskTitleEl = document.querySelector('.risk-box p strong');
     if (riskTitleEl) riskTitleEl.innerText = category;
@@ -752,16 +752,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const safeEl = document.querySelector('.safe');
     if (safeEl) {
       const map = {
-        'Safe':                                   { text: 'SAFE',     color: '#0f6f45', bg: '#f3faf6', border: '2px solid #dff6e6' },
-        'Needs Cleaning':                         { text: 'CLEAN',    color: '#f0a84a', bg: '#fff8ef', border: '2px solid #fde6c8' },
+        'Safe': { text: 'SAFE', color: '#0f6f45', bg: '#f3faf6', border: '2px solid #dff6e6' },
+        'Needs Cleaning': { text: 'CLEAN', color: '#f0a84a', bg: '#fff8ef', border: '2px solid #fde6c8' },
         'Needs Thorough Cleaning & Disinfecting': { text: 'THOROUGH', color: '#de6d2b', bg: '#fff5f0', border: '2px solid #f7d5c7' },
-        'Subject for Fogging':                    { text: 'FOGGING',  color: '#c33',    bg: '#fff0f0', border: '2px solid #f3c6c6' },
+        'Subject for Fogging': { text: 'FOGGING', color: '#c33', bg: '#fff0f0', border: '2px solid #f3c6c6' },
       };
       const info = map[category] || map['Safe'];
-      safeEl.innerText        = info.text;
-      safeEl.style.color      = info.color;
+      safeEl.innerText = info.text;
+      safeEl.style.color = info.color;
       safeEl.style.background = info.bg;
-      safeEl.style.border     = info.border;
+      safeEl.style.border = info.border;
     }
 
     drawTrendGraph();
@@ -784,10 +784,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Color-code by species
     const speciesColors = {
-      'Aedes aegypti':           '#e03131',
-      'Aedes albopictus':        '#de6d2b',
-      'Culex quinquefasciatus':  '#f0a84a',
-      'anopheles':               '#7c3aed',
+      'Aedes aegypti': '#e03131',
+      'Aedes albopictus': '#de6d2b',
+      'Culex quinquefasciatus': '#f0a84a',
+      'anopheles': '#7c3aed',
     };
     const accentColor = speciesColors[species] || '#e03131';
 

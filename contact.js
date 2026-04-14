@@ -10,6 +10,8 @@ document.addEventListener('DOMContentLoaded', () => {
         hamburger.classList.add('active');
         if (overlay) overlay.classList.add('active');
         hamburger.setAttribute('aria-expanded', 'true');
+        const container = document.querySelector('.container');
+        if (container) container.classList.remove('sidebar-collapsed');
     }
 
     function closeSidebar() {
@@ -17,11 +19,22 @@ document.addEventListener('DOMContentLoaded', () => {
         hamburger.classList.remove('active');
         if (overlay) overlay.classList.remove('active');
         hamburger.setAttribute('aria-expanded', 'false');
+        const container = document.querySelector('.container');
+        if (container) container.classList.add('sidebar-collapsed');
+    }
+
+    function toggleSidebar() {
+        if (sidebar.classList.contains('open') || 
+            (window.innerWidth > 900 && !document.querySelector('.container').classList.contains('sidebar-collapsed'))) {
+            closeSidebar();
+        } else {
+            openSidebar();
+        }
     }
 
     hamburger.addEventListener('click', (e) => {
         e.stopPropagation();
-        sidebar.classList.contains('open') ? closeSidebar() : openSidebar();
+        toggleSidebar();
     });
 
     if (overlay) overlay.addEventListener('click', closeSidebar);

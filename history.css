@@ -59,22 +59,7 @@ td{color:#444;font-size:13px}
   .actions{order:4}
 }
 
-/* Mobile overlay backdrop */
-.sidebar-overlay {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.35);
-  z-index: 998;
-}
-.sidebar-overlay.active {
-  display: block;
-}
 
-/* Sidebar slide transition */
-.sidebar {
-  transition: transform 0.22s cubic-bezier(.4,0,.2,1);
-}
 
 @media (max-width: 900px) {
   /* Fix hamburger so it's always visible and tappable on mobile */

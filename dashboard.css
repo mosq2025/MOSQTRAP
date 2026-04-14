@@ -78,7 +78,7 @@ body {
 
 /* Sidebar slide transition */
 .sidebar {
-  transition: transform 0.22s cubic-bezier(.4,0,.2,1);
+  transition: transform 0.22s cubic-bezier(.4,0,.2,1), margin-left 0.22s cubic-bezier(.4,0,.2,1);
 }
 
 /* Mobile overlay backdrop */
@@ -89,11 +89,12 @@ body {
   background: rgba(0,0,0,0.35);
   z-index: 998;
 }
-.sidebar-overlay.active {
-  display: block;
-}
 
 @media (max-width: 900px) {
+  .sidebar-overlay.active {
+    display: block;
+  }
+  
   .sidebar { position: fixed; left: 0; top: 0; bottom: 0; transform: translateX(-110%); z-index: 999; }
   .sidebar.open { transform: translateX(0); box-shadow: 0 20px 40px rgba(18,52,38,0.08); }
 
@@ -112,6 +113,7 @@ body {
 /* Desktop collapse handling via container class */
 .container.sidebar-collapsed .sidebar {
   transform: translateX(-110%);
+  margin-left: -240px; /* pull layout space exactly the width */
 }
 
 .container.sidebar-collapsed .hamburger {

@@ -106,19 +106,23 @@ body {
   background: rgba(0,0,0,0.35);
   z-index: 998;
 }
-.sidebar-overlay.active {
-  display: block;
+
+@media (max-width: 900px) {
+  .sidebar-overlay.active {
+    display: block;
+  }
 }
 
 /* Sidebar slide transition */
 .sidebar {
-  transition: transform 0.22s cubic-bezier(.4,0,.2,1);
+  transition: transform 0.22s cubic-bezier(.4,0,.2,1), margin-left 0.22s cubic-bezier(.4,0,.2,1);
 }
 
 
 /* Desktop collapse handling via container class */
 .container.sidebar-collapsed .sidebar {
   transform: translateX(-110%);
+  margin-left: -240px; /* pull layout space exactly the width */
 }
 
 .container.sidebar-collapsed .hamburger {

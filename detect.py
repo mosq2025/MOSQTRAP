@@ -60,8 +60,11 @@ CONFIDENCE_THRESHOLD = 0.25
 # Number of consecutive frames a detection must appear before we count it.
 PERSISTENCE_FRAMES = 4
 
-# Seconds between accepted detections to avoid double-counting.
+# Cooldown (seconds) before counting another mosquito (prevents spam).
 COOLDOWN_SEC = 6.0
+
+# Bounding Box Shrink Factor (0.0 to 1.0). 1.0 = original size, 0.6 = 60% size.
+SHRINK_FACTOR = 0.1
 
 # Camera device index (0 = default/built-in webcam, 1 = external/secondary webcam).
 CAMERA_ID = 1
@@ -121,7 +124,19 @@ def run_detection():
         if len(dets) > 0:
             # Take the highest-confidence detection
             best_idx = int(dets[:, 4].argmax())
-            x1, y1, x2, y2 = int(dets[best_idx][0]), int(dets[best_idx][1]), int(dets[best_idx][2]), int(dets[best_idx][3])
+            x1, y1, x2, y2 = float(dets[best_idx][0]), float(dets[best_idx][1]), float(dets[best_idx][2]), float(dets[best_idx][3])
+            
+            # Shrink bounding box around the center
+            if SHRINK_FACTOR != 1.0:
+                w, h = x2 - x1, y2 - y1
+                cx, cy = x1 + w / 2, y1 + h / 2
+                x1 = cx - (w * SHRINK_FACTOR) / 2
+                x2 = cx + (w * SHRINK_FACTOR) / 2
+                y1 = cy - (h * SHRINK_FACTOR) / 2
+                y2 = cy + (h * SHRINK_FACTOR) / 2
+
+            x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
+            
             best_conf = float(dets[best_idx][4])
             cls_idx = int(dets[best_idx][5])
             species = model.names[cls_idx] if model.names else "mosquito"
