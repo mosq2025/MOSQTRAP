@@ -84,8 +84,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // Sign out button
     const signOutBtn = document.getElementById('signoutBtn');
     if (signOutBtn) {
+        signOutBtn.style.cursor = 'pointer';
         signOutBtn.addEventListener('click', function () {
-            window.location.href = 'login.html';
+            if (confirm('Are you sure you want to sign out?')) {
+                window.location.href = 'login.html';
+            }
         });
     }
 
