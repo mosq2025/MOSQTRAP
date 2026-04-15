@@ -630,7 +630,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Ensure Supabase is loaded
-  if (!window.supabase || !supabaseClient) {
+  if (!window.supabase || !window.supabaseClient) {
     setStatus('Supabase not configured', '#e03131');
     return;
   }
@@ -653,7 +653,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const threeDaysAgoStr = threeDaysAgo.toISOString().split('T')[0];
 
       // Fetch last 3 days of detections
-      const { data, error } = await supabaseClient
+      const { data, error } = await window.supabaseClient
         .from('detections')
         .select('*')
         .gte('timestamp', threeDaysAgoStr + 'T00:00:00');
@@ -689,7 +689,7 @@ document.addEventListener('DOMContentLoaded', () => {
   fetchInitialData();
 
   // ── Live detection from Cloud (Supabase Realtime) ────────────────────────────
-  const detectionsChannel = supabaseClient.channel('custom-insert-channel')
+  const detectionsChannel = window.supabaseClient.channel('custom-insert-channel')
     .on(
       'postgres_changes',
       { event: 'INSERT', schema: 'public', table: 'detections' },

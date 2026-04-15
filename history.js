@@ -42,7 +42,7 @@ document.addEventListener('DOMContentLoaded', function () {
         return;
       }
 
-      const { data, error } = await supabaseClient.from('detections').select('*');
+      const { data, error } = await window.supabaseClient.from('detections').select('*');
       if (error) throw error;
 
       // Group by date (YYYY-MM-DD)
@@ -129,7 +129,7 @@ document.addEventListener('DOMContentLoaded', function () {
   fetchHistoryTable();
   // Listen for realtime inserts instead of polling
   if (window.supabaseClient) {
-    supabaseClient.channel('history-realtime')
+    window.supabaseClient.channel('history-realtime')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'detections' }, () => {
         fetchHistoryTable(); // Refresh table
       }).subscribe();
