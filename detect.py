@@ -4,6 +4,10 @@ import sys
 import time
 import threading
 import torch
+import smtplib
+import ssl
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 from dotenv import load_dotenv
 from supabase import create_client, Client
 from datetime import datetime, timedelta
@@ -40,6 +44,18 @@ if SUPABASE_URL and SUPABASE_KEY:
 else:
     print("[WARN] Supabase credentials not found in .env. Uploads will be skipped.")
 
+# ─── Email Configuration ──────────────────────────────────────────────────────
+EMAIL_SENDER   = os.environ.get("EMAIL_SENDER",   "")
+EMAIL_PASSWORD = os.environ.get("EMAIL_PASSWORD", "")
+# Recipients are pulled automatically from Supabase Auth (all signed-up users).
+# No EMAIL_RECIPIENT needed in .env.
+
+# Active monitoring windows: list of (start_hour, end_hour, label)
+ACTIVE_WINDOWS = [
+    (16, 18, "4:00 PM – 6:00 PM"),
+    (21, 23, "9:00 PM – 11:00 PM"),
+]
+
 def get_three_day_total():
     if not supabase:
         return 0
@@ -50,6 +66,195 @@ def get_three_day_total():
     except Exception as e:
         print("[ERROR] Supabase three_day_total query failed:", e)
         return 0
+
+
+def get_today_total():
+    """Return total detections recorded today from Supabase."""
+    if not supabase:
+        return detection_count  # fall back to in-memory count
+    try:
+        start_of_day = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
+        res = supabase.table("detections").select("id").gte("timestamp", start_of_day).execute()
+        return len(res.data)
+    except Exception as e:
+        print("[ERROR] Supabase today_total query failed:", e)
+        return detection_count
+
+
+def get_registered_emails():
+    """
+    Fetch all registered user emails from Supabase Auth.
+    Uses the service-role key (SUPABASE_KEY) which has admin access.
+    Returns a list of email strings.
+    """
+    if not supabase:
+        return []
+    try:
+        # admin.list_users() returns a list of User objects
+        response = supabase.auth.admin.list_users()
+        emails = [
+            user.email
+            for user in response
+            if user.email  # skip entries with no email
+        ]
+        print(f"[EMAIL] Found {len(emails)} registered user(s) to notify.")
+        return emails
+    except Exception as e:
+        print(f"[EMAIL] Failed to fetch registered users: {e}")
+        return []
+
+
+def send_activation_email(window_label: str):
+    """Send an HTML activation report email to all registered users."""
+    if not EMAIL_SENDER or not EMAIL_PASSWORD:
+        print("[EMAIL] Skipping — EMAIL_SENDER or EMAIL_PASSWORD not configured in .env")
+        return
+
+    recipients = get_registered_emails()
+    if not recipients:
+        print("[EMAIL] Skipping — no registered users found in Supabase Auth.")
+        return
+
+    now            = datetime.now()
+    today_count    = get_today_total()
+    three_day      = get_three_day_total()
+    date_str       = now.strftime("%B %d, %Y")
+    time_str       = now.strftime("%I:%M %p")
+
+    # Determine risk level badge
+    if three_day >= 20:
+        risk_color, risk_label = "#ef4444", "HIGH"
+    elif three_day >= 10:
+        risk_color, risk_label = "#f59e0b", "MODERATE"
+    else:
+        risk_color, risk_label = "#22c55e", "LOW"
+
+    html_body = f"""\
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MOSTRAP Activation Report</title>
+</head>
+<body style="margin:0;padding:0;background:#0f172a;font-family:'Segoe UI',Arial,sans-serif;color:#e2e8f0;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#0f172a;padding:40px 20px;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
+
+        <!-- Header -->
+        <tr>
+          <td style="background:linear-gradient(135deg,#7c3aed,#2563eb);border-radius:16px 16px 0 0;padding:32px 40px;text-align:center;">
+            <div style="font-size:32px;margin-bottom:8px;">🦟</div>
+            <h1 style="margin:0;font-size:24px;font-weight:700;color:#fff;letter-spacing:-0.5px;">MOSTRAP Activated</h1>
+            <p style="margin:8px 0 0;font-size:14px;color:#c4b5fd;">{date_str} &nbsp;·&nbsp; {time_str}</p>
+          </td>
+        </tr>
+
+        <!-- Window Banner -->
+        <tr>
+          <td style="background:#1e1b4b;padding:16px 40px;text-align:center;">
+            <span style="display:inline-block;background:#312e81;border:1px solid #4338ca;border-radius:20px;padding:6px 18px;font-size:13px;color:#a5b4fc;">
+              ⏰ Active Window: <strong style="color:#818cf8;">{window_label}</strong>
+            </span>
+          </td>
+        </tr>
+
+        <!-- Stats -->
+        <tr>
+          <td style="background:#1e293b;padding:32px 40px;">
+            <table width="100%" cellpadding="0" cellspacing="0">
+              <tr>
+                <td width="50%" style="padding-right:12px;">
+                  <div style="background:#0f172a;border:1px solid #334155;border-radius:12px;padding:20px;text-align:center;">
+                    <div style="font-size:36px;font-weight:800;color:#818cf8;">{today_count}</div>
+                    <div style="font-size:12px;color:#64748b;margin-top:4px;text-transform:uppercase;letter-spacing:1px;">Today's Detections</div>
+                  </div>
+                </td>
+                <td width="50%" style="padding-left:12px;">
+                  <div style="background:#0f172a;border:1px solid #334155;border-radius:12px;padding:20px;text-align:center;">
+                    <div style="font-size:36px;font-weight:800;color:#38bdf8;">{three_day}</div>
+                    <div style="font-size:12px;color:#64748b;margin-top:4px;text-transform:uppercase;letter-spacing:1px;">3-Day Total</div>
+                  </div>
+                </td>
+              </tr>
+            </table>
+
+            <!-- Risk Level -->
+            <div style="margin-top:20px;background:#0f172a;border:1px solid {risk_color}44;border-radius:12px;padding:16px 20px;display:flex;align-items:center;">
+              <span style="font-size:13px;color:#94a3b8;">Risk Level:</span>
+              <span style="margin-left:10px;display:inline-block;background:{risk_color}22;border:1px solid {risk_color};border-radius:8px;padding:3px 12px;font-size:13px;font-weight:700;color:{risk_color};">{risk_label}</span>
+            </div>
+
+          </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+          <td style="background:#0f172a;border:1px solid #1e293b;border-top:0;border-radius:0 0 16px 16px;padding:24px 40px;text-align:center;">
+            <p style="margin:0 0 16px;font-size:13px;color:#64748b;">Monitoring is now active. Visit your dashboard for live detections.</p>
+            <a href="http://localhost:5000" style="display:inline-block;background:linear-gradient(135deg,#7c3aed,#2563eb);color:#fff;text-decoration:none;border-radius:8px;padding:10px 24px;font-size:14px;font-weight:600;">Open Dashboard →</a>
+            <p style="margin:20px 0 0;font-size:11px;color:#334155;">MOSTRAP Mosquito Trap Automated Report · Do not reply</p>
+          </td>
+        </tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>"""
+
+    try:
+        context = ssl.create_default_context()
+        with smtplib.SMTP("smtp.gmail.com", 587) as server:
+            server.ehlo()
+            server.starttls(context=context)
+            server.login(EMAIL_SENDER, EMAIL_PASSWORD)
+
+            for recipient in recipients:
+                msg = MIMEMultipart("alternative")
+                msg["Subject"] = f"🦟 MOSTRAP Activated — {window_label} | {date_str}"
+                msg["From"]    = EMAIL_SENDER
+                msg["To"]      = recipient
+                msg.attach(MIMEText(html_body, "html"))
+                server.sendmail(EMAIL_SENDER, recipient, msg.as_string())
+                print(f"[EMAIL] Report sent to {recipient} for window: {window_label}")
+
+    except Exception as e:
+        print(f"[EMAIL] Failed to send activation report: {e}")
+
+
+def activation_scheduler():
+    """
+    Background thread that fires one activation email per window per day.
+    Active windows: 4:00 PM–6:00 PM and 9:00 PM–11:00 PM.
+    Checks every 30 seconds; sends once at the start of each window.
+    """
+    sent_today = set()  # keys: (date_str, start_hour)
+    print("[EMAIL] Activation scheduler started. Watching for active windows...")
+
+    while True:
+        now   = datetime.now()
+        hour  = now.hour
+        today = now.strftime("%Y-%m-%d")
+
+        for start_hour, end_hour, label in ACTIVE_WINDOWS:
+            key = (today, start_hour)
+            # Fire at the exact start hour of the window (first 30-second tick inside it)
+            if start_hour <= hour < end_hour and key not in sent_today:
+                sent_today.add(key)
+                # Run email in a separate thread so scheduler loop isn't blocked
+                threading.Thread(
+                    target=send_activation_email,
+                    args=(label,),
+                    daemon=True
+                ).start()
+
+        # Prune old keys to avoid set growing unboundedly
+        stale = {k for k in sent_today if k[0] != today}
+        sent_today -= stale
+
+        time.sleep(30)
 
 
 # ─── Tunable Parameters ───────────────────────────────────────────────────────
@@ -98,6 +303,13 @@ def run_detection():
         print("[ERROR] Cannot open camera. Is it connected?")
         is_running = False
         return
+        
+    # Request Full HD resolution to use the entire camera sensor
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 860)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 520)
+    
+    # Force the camera's hardware/digital zoom to zoom all the way out
+    cap.set(cv2.CAP_PROP_ZOOM, -200)
 
     consecutive_hits = 0
     last_detection_time = 0.0
@@ -108,7 +320,18 @@ def run_detection():
     print("[INFO] Camera started. YOLO detection running.")
     print(f"[INFO] Confidence≥{CONFIDENCE_THRESHOLD}  Persistence={PERSISTENCE_FRAMES} frames  Cooldown={COOLDOWN_SEC}s")
 
+    current_date = datetime.now().date()
+
     while is_running:
+        # ── Midnight Reset Check ──────────────────────────────────────────────
+        now_date = datetime.now().date()
+        if now_date > current_date:
+            print(f"[INFO] Midnight crossed. Resetting daily count from {detection_count} to 0.")
+            detection_count = 0
+            detection_log.clear()
+            socketio.emit("count_reset", {"count": 0})
+            current_date = now_date
+
         ret, frame = cap.read()
         if not ret:
             time.sleep(0.05)
@@ -342,6 +565,9 @@ def on_reset_count():
 if __name__ == "__main__":
     camera_thread = threading.Thread(target=run_detection, daemon=True)
     camera_thread.start()
+
+    scheduler_thread = threading.Thread(target=activation_scheduler, daemon=True)
+    scheduler_thread.start()
 
     print("=" * 55)
     print("  MOSTRAP Detection Server  ->  http://localhost:5000")

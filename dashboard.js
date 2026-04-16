@@ -46,8 +46,8 @@ function ensureTooltip() {
   }
 }
 
-let trendData = [1, 1, 4, 2, 3, 2, 5, 2, 3, 1, 4, 2];
-const maxDataPoints = 20;
+let trendData = []; // [{date: 'YYYY-MM-DD', count: N}] 
+const maxDataPoints = 14; 
 
 function drawTrendGraph() {
   // Ensure canvas size matches display (handles high-DPI)
@@ -56,111 +56,129 @@ function drawTrendGraph() {
   const ch = canvas.clientHeight;
   ctx.clearRect(0, 0, cw, ch);
 
-  const padding = 50;
-  const graphWidth = cw - 2 * padding;
-  const graphHeight = ch - 2 * padding;
-  const steps = 4; // Low, Moderate, High, Very High
-  const stepX = graphWidth / Math.max(trendData.length - 1, 1);
+  const paddingTop = 20;
+  const paddingBottom = 40;
+  const paddingLeft = 70;
+  const paddingRight = 20;
+  const graphWidth = cw - paddingLeft - paddingRight;
+  const graphHeight = ch - paddingTop - paddingBottom;
 
-  // Draw faint horizontal grid lines (no left labels)
-  const gridLines = 4;
-  ctx.lineWidth = 1;
-  ctx.strokeStyle = 'rgba(34,76,55,0.03)';
-  for (let i = 0; i < gridLines; i++) {
-    const y = padding + (i / (gridLines - 1)) * graphHeight;
+  const yLabels = ["Very High", "High", "Moderate", "Low"];
+  
+  // Left axis line
+  ctx.beginPath();
+  ctx.moveTo(paddingLeft, paddingTop);
+  ctx.lineTo(paddingLeft, paddingTop + graphHeight);
+  ctx.strokeStyle = 'rgba(0,0,0,0.06)';
+  ctx.stroke();
+
+  // Bottom axis line
+  ctx.beginPath();
+  ctx.moveTo(paddingLeft, paddingTop + graphHeight);
+  ctx.lineTo(cw - paddingRight, paddingTop + graphHeight);
+  ctx.stroke();
+
+  // Draw faint horizontal grid lines and Y-axis labels
+  ctx.font = '11px Arial';
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#6b7280'; 
+
+  for (let i = 0; i < 4; i++) {
+    const y = paddingTop + i * (graphHeight / 3);
+    ctx.fillText(yLabels[i], paddingLeft - 10, y);
+    
     ctx.beginPath();
-    ctx.moveTo(padding, y);
-    ctx.lineTo(cw - padding, y);
+    ctx.moveTo(paddingLeft, y);
+    ctx.lineTo(cw - paddingRight, y);
+    ctx.strokeStyle = 'rgba(0,0,0,0.03)';
     ctx.stroke();
   }
 
-  // Build points (continuous mapping using actual values)
-  const maxVal = Math.max(6, ...trendData);
-  const points = trendData.map((v, i) => {
-    const x = padding + i * stepX;
-    // higher value -> closer to top (Very High)
-    const y = padding + (1 - (v / maxVal)) * graphHeight;
-    return { x, y, v };
+  // Calculate coordinates 
+  // Max scale defaults to at least 10, or uses the max trend value to ensure the peak hits "High" or "Very High"
+  const maxVal = Math.max(10, ...trendData.map(d => d.count || 0));
+  const stepX = graphWidth / Math.max(trendData.length - 1, 1);
+  
+  const points = trendData.map((d, i) => {
+    const x = paddingLeft + i * stepX;
+    const v = d.count || 0;
+    const norm = Math.min(1, Math.max(0, v / maxVal));
+    const y = paddingTop + graphHeight - (norm * graphHeight);
+    return { x, y, v, date: d.date };
   });
 
-  // Draw area under smooth curve
+  // Area fill under straight lines (matches visual)
   if (points.length) {
     ctx.beginPath();
     ctx.moveTo(points[0].x, points[0].y);
     for (let i = 1; i < points.length; i++) {
-      const prev = points[i - 1];
-      const cur = points[i];
-      const midX = (prev.x + cur.x) / 2;
-      ctx.quadraticCurveTo(prev.x, prev.y, midX, (prev.y + cur.y) / 2);
+      ctx.lineTo(points[i].x, points[i].y);
     }
     const last = points[points.length - 1];
-    ctx.lineTo(last.x, last.y);
-    // close area to bottom
-    ctx.lineTo(last.x, padding + graphHeight);
-    ctx.lineTo(points[0].x, padding + graphHeight);
+    ctx.lineTo(last.x, paddingTop + graphHeight);
+    ctx.lineTo(points[0].x, paddingTop + graphHeight);
     ctx.closePath();
-    const grad = ctx.createLinearGradient(0, padding, 0, padding + graphHeight);
-    grad.addColorStop(0, 'rgba(31,122,67,0.08)');
-    grad.addColorStop(1, 'rgba(31,122,67,0.02)');
+    
+    const grad = ctx.createLinearGradient(0, paddingTop, 0, paddingTop + graphHeight);
+    grad.addColorStop(0, 'rgba(46, 125, 82, 0.15)'); 
+    grad.addColorStop(1, 'rgba(46, 125, 82, 0.02)');
     ctx.fillStyle = grad;
     ctx.fill();
   }
 
-  // Draw smooth polyline
+  // Draw straight lines connecting points
   if (points.length) {
     ctx.beginPath();
-    ctx.lineWidth = 2.5;
-    ctx.strokeStyle = '#1f7a43';
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = '#387352'; // dark green line
     ctx.moveTo(points[0].x, points[0].y);
     for (let i = 1; i < points.length; i++) {
-      const prev = points[i - 1];
-      const cur = points[i];
-      const midX = (prev.x + cur.x) / 2;
-      ctx.quadraticCurveTo(prev.x, prev.y, midX, (prev.y + cur.y) / 2);
+      ctx.lineTo(points[i].x, points[i].y);
     }
-    const last = points[points.length - 1];
-    ctx.lineTo(last.x, last.y);
     ctx.stroke();
   }
 
-  // Draw points and store hit radius. Small baseline dots, last two highlighted.
-  points.forEach((p, idx) => {
-    const isLast = idx === points.length - 1;
-    const isSecondLast = idx === points.length - 2;
-
-    // baseline small green dot
+  // Draw distinct round data dots
+  points.forEach((p) => {
     ctx.beginPath();
-    ctx.fillStyle = '#1f7a43';
-    const r = 3;
-    ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
-    ctx.fill();
-
-    // highlight last two with an outer ring (yellow/orange)
-    if (isSecondLast || isLast) {
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, r + 2.5, 0, Math.PI * 2);
-      ctx.lineWidth = 2;
-      ctx.strokeStyle = isLast ? '#de6d2b' : '#f0b33a';
-      ctx.stroke();
+    ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+    
+    // Outline matches the line string color exactly
+    ctx.strokeStyle = '#387352';
+    ctx.lineWidth = 1.6;
+    
+    // Map dot colors to the node's relative height in the graph
+    const norm = p.v / maxVal;
+    if (norm > 0.6) {
+      ctx.fillStyle = '#ef4444'; // Red for Very High / High
+    } else if (norm > 0.2) {
+      ctx.fillStyle = '#f59e0b'; // Orange for Moderate
+    } else {
+      ctx.fillStyle = '#387352'; // Dark green for Low
     }
-
+    
+    ctx.fill();
+    ctx.stroke();
+    
     p._hitRadius = 10;
   });
 
-  // X-axis date labels (use recent dates)
-  ctx.fillStyle = '#5a6b60';
+  // Draw discrete X-Axis Date labels (YYYY-MM-DD)
+  // Limited to avoid visual crowding just like the reference photo
+  ctx.fillStyle = '#6b7280';
   ctx.textAlign = 'center';
-  ctx.font = '11px Arial';
-  const today = new Date();
+  
   for (let i = 0; i < trendData.length; i++) {
-    const d = new Date(today);
-    d.setDate(d.getDate() - (trendData.length - 1 - i));
-    const label = d.toISOString().slice(5, 10); // MM-DD
-    const x = padding + i * stepX;
-    ctx.fillText(label, x, padding + graphHeight + 18);
+    // Show only a few evenly spaced dates, roughly every 3rd tick for a 14 day window
+    if (trendData.length <= 7 || i % 3 === 0 || i === trendData.length - 1) {
+      const label = trendData[i].date; // YYYY-MM-DD
+      const x = paddingLeft + i * stepX;
+      ctx.fillText(label, x, paddingTop + graphHeight + 18);
+    }
   }
 
-  // attach points for tooltip handling (store on canvas)
+  // Support interactive tooltips
   canvas._chartPoints = points;
 }
 
@@ -182,14 +200,10 @@ canvas.addEventListener('mousemove', (e) => {
     }
   }
   if (found) {
-    const today = new Date();
-    const idx = points.indexOf(found);
-    const d = new Date(today);
-    d.setDate(d.getDate() - (points.length - 1 - idx));
     chartTooltip.style.left = (e.clientX + 10) + 'px';
     chartTooltip.style.top = (e.clientY + 10) + 'px';
     chartTooltip.style.display = 'block';
-    chartTooltip.innerText = `${d.toISOString().slice(0, 10)} — ${found.v} mosq`;
+    chartTooltip.innerText = `${found.date} — ${found.v} mosq`;
   } else {
     chartTooltip.style.display = 'none';
   }
@@ -287,11 +301,11 @@ canvas.addEventListener('mouseleave', () => {
 // Update trend with new data every 3 seconds
 function updateTrendData() {
   const newValue = Math.floor(Math.random() * 6) + 1; // Random value 1-6
-  trendData.push(newValue);
-
-  if (trendData.length > maxDataPoints) {
-    trendData.shift();
-  }
+  
+  if (trendData.length === 0) return;
+  const todayStr = new Date().toISOString().split('T')[0];
+  let todayEntry = trendData.find(d => d.date === todayStr);
+  if (todayEntry) todayEntry.count = newValue;
 
   // Update mosquito count display
   document.getElementById("mosquitoCount").innerText = newValue;
@@ -299,7 +313,7 @@ function updateTrendData() {
 
   // Recompute 3-day totals and classification
   const lastN = trendData.slice(-3);
-  const threeDayTotal = lastN.reduce((s, v) => s + v, 0);
+  const threeDayTotal = lastN.reduce((s, row) => s + (row.count || 0), 0);
   const threeDayAvg = (threeDayTotal / Math.max(1, lastN.length));
 
   // Classification based on 3-day total (from provided table)
@@ -649,14 +663,18 @@ document.addEventListener('DOMContentLoaded', () => {
       const threeDaysAgo = new Date(today);
       threeDaysAgo.setDate(today.getDate() - 3);
 
+      const lookbackDate = new Date(today);
+      lookbackDate.setDate(today.getDate() - maxDataPoints + 1);
+
       const todayStr = today.toISOString().split('T')[0];
       const threeDaysAgoStr = threeDaysAgo.toISOString().split('T')[0];
+      const lookbackStr = lookbackDate.toISOString().split('T')[0];
 
-      // Fetch last 3 days of detections
+      // Fetch history for graph limit
       const { data, error } = await window.supabaseClient
         .from('detections')
         .select('*')
-        .gte('timestamp', threeDaysAgoStr + 'T00:00:00');
+        .gte('timestamp', lookbackStr + 'T00:00:00');
 
       if (error) {
         console.error("Supabase fetch error:", error);
@@ -669,13 +687,26 @@ document.addEventListener('DOMContentLoaded', () => {
       // Calculate totals
       let tCount = 0;
       let wTotal = 0;
+      const dailyMap = {};
 
       data.forEach(d => {
-        wTotal++;
-        if (d.timestamp && d.timestamp.startsWith(todayStr)) {
-          tCount++;
-        }
+        if (!d.timestamp) return;
+        const dStr = d.timestamp.split('T')[0];
+        
+        dailyMap[dStr] = (dailyMap[dStr] || 0) + 1;
+
+        if (dStr >= threeDaysAgoStr) wTotal++;
+        if (dStr === todayStr) tCount++;
       });
+
+      // Populate empty days array for stable line chart
+      trendData = [];
+      for (let i = maxDataPoints - 1; i >= 0; i--) {
+         const d = new Date(today);
+         d.setDate(today.getDate() - i);
+         const dStr = d.toISOString().split('T')[0];
+         trendData.push({ date: dStr, count: dailyMap[dStr] || 0 });
+      }
 
       currentTodayCount = tCount;
       currentWindowTotal = wTotal;
@@ -724,9 +755,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const countEl = document.getElementById('mosquitoCount');
     if (countEl) countEl.innerText = sessionCount;
 
-    // Push session count into chart
-    trendData.push(sessionCount);
-    if (trendData.length > maxDataPoints) trendData.shift();
+    // Update today's count in the graph, preventing duplication 'sticks'
+    if (trendData.length > 0) {
+      const todayStr = new Date().toISOString().split('T')[0];
+      let todayEntry = trendData.find(d => d.date === todayStr);
+      if (todayEntry) todayEntry.count = sessionCount;
+      else {
+        trendData.push({ date: todayStr, count: sessionCount });
+        if (trendData.length > maxDataPoints) trendData.shift();
+      }
+    }
 
     // RISK ASSESSMENT — based on 3-day window total
     let category, action;
