@@ -263,7 +263,8 @@ def activation_scheduler():
 CONFIDENCE_THRESHOLD = 0.25
 
 # Number of consecutive frames a detection must appear before we count it.
-PERSISTENCE_FRAMES = 4
+# 2 frames is a very fast decision (almost instant) but filters out 1-frame glitches.
+PERSISTENCE_FRAMES = 2
 
 # Number of consecutive frames with NO detection before we consider the mosquito gone.
 # At ~30 fps a value of 60 means the mosquito must be absent for ~2 seconds.
@@ -341,7 +342,7 @@ def run_detection():
         if len(results) > 0 and len(results[0].boxes) > 0:
             boxes = results[0].boxes
             
-            # Take the highest-confidence detection
+            # Take the highest-confidence detection for the primary counting logic
             best_idx = int(boxes.conf.argmax().item())
             
             box = boxes[best_idx]
