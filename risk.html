@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Risk Assessment - MOSTRAP</title>
+  <link rel="stylesheet" href="dashboard.css">
+</head>
+<body>
+
+<div class="container">
+  <!-- SIDEBAR -->
+  <button class="hamburger" id="hamburger" aria-label="Toggle menu" aria-expanded="true">
+    <span></span>
+    <span></span>
+    <span></span>
+  </button>
+
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <h3>MOSTRAP</h3>
+    </div>
+    <div class="nav-item"><img src="icon/dashboard (1).png" alt="home" class="nav-icon"> Main Dashboard</div>
+    <div id="navHistory" class="nav-item"><img src="icon/history.png" alt="history" class="nav-icon"> History</div>
+    <div id="navManual" class="nav-item"><img src="icon/settings.png" alt="manual" class="nav-icon"> Manual</div>
+    <div id="navContact" class="nav-item"><img src="icon/customer-service.png" alt="contact" class="nav-icon"> Contact</div>
+
+    <div class="signout" id="signoutBtn"><img src="icon/logout.png" alt="logout" class="nav-icon"> Sign Out</div>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div class="main">
+
+    <!-- TOP BAR -->
+    <div class="top-bar">
+      <button id="backBtn" style="background: #1f7a43; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600;">← Back to Dashboard</button>
+      <div id="datetime"></div>
+      <div>🔔</div>
+    </div>
+
+    <!-- RISK ASSESSMENT -->
+    <div class="risk" id="riskAssessment">
+      <h2>RISK ASSESSMENT</h2>
+
+      <div class="risk-grid">
+        <div class="risk-box">
+          <h3>3 DAY ASSESSMENT</h3>
+          <p><strong id="riskCategory">Safe</strong></p>
+          <p class="arrow">→ <span id="fogCount">0</span></p>
+        </div>
+
+        <div class="risk-box">
+          <h3>RECOMMENDATION ACTIONS</h3>
+          <ul id="recommendationList">
+            <li>Continue monitoring</li>
+            <li>No fogging required</li>
+            <li>Maintain cleanliness</li>
+          </ul>
+        </div>
+      </div>
+
+      <div style="margin-top: 40px; padding: 20px; background: #ffffff; border-radius: 10px; box-shadow: 0 6px 20px rgba(20,60,40,0.04);">
+        <h3 style="color: #0f6f45; margin-top: 0;">ASSESSMENT DETAILS</h3>
+        <p style="color: #234c37; line-height: 1.6;">
+          <strong>Classification System:</strong><br>
+          <br>
+          <strong>Safe (0-6 mosquitoes):</strong> Routine Monitoring - Continue normal surveillance<br>
+          <br>
+          <strong>Needs Cleaning (7-15 mosquitoes):</strong> Environmental Cleaning - Clean and disinfect the area<br>
+          <br>
+          <strong>Needs Thorough Cleaning & Disinfecting (16-30 mosquitoes):</strong> Deep cleaning + larval control measures required<br>
+          <br>
+          <strong>Subject for Fogging (30+ mosquitoes):</strong> Fogging + community-level intervention necessary
+        </p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="dashboard.js"></script>
+<script>
+  // Back button functionality
+  document.getElementById('backBtn').addEventListener('click', () => {
+    window.location.href = 'dashboard.html';
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,4 @@
+.env
+history.json
+snapshots/
+__pycache__/

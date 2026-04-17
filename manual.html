@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MOSTRAP Manual</title>
+  <link rel="stylesheet" href="manual.css" />
+</head>
+
+<body>
+
+  <div class="container">
+    <!-- MOBILE SIDEBAR OVERLAY -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- SIDEBAR -->
+    <button class="hamburger" id="hamburger" aria-label="Toggle menu" aria-expanded="false">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+
+    <div class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <h3>MOSTRAP</h3>
+      </div>
+      <div id="navDashboard" class="nav-item"><img src="icon/dashboard.png" alt="home" class="nav-icon"> Main
+        Dashboard</div>
+      <div id="navHistory" class="nav-item"><img src="icon/history.png" alt="history" class="nav-icon"> History</div>
+      <div class="nav-item"><img src="icon/settings.png" alt="manual" class="nav-icon"> Manual</div>
+      <div id="navContact" class="nav-item"><img src="icon/contact.png" alt="contact" class="nav-icon"> Contact
+      </div>
+
+      <div class="signout" id="signoutBtn"><img src="icon/logout.png" alt="logout" class="nav-icon"> Sign Out</div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="main">
+
+      <!-- MANUAL GRID -->
+      <div class="grid">
+        <div class="card">
+          <h2>SYSTEM COMPONENTS</h2>
+          <ul>
+            <li>Raspberry Pi 5</li>
+            <li>Camera Module</li>
+            <li>UV Light Attractor</li>
+            <li>Fan Trap Mechanism</li>
+            <li>Relay Module</li>
+            <li>12V Power Supply</li>
+            <li>Web-based Dashboard</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <h2>MAINTENANCE</h2>
+          <ul>
+            <li>Clean the trap weekly</li>
+            <li>Check camera lens for dust</li>
+            <li>Ensure UV light is functioning</li>
+            <li>Verify power connections</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <h2>SYSTEM SETUP</h2>
+          <ol>
+            <li>Connect the camera to the Raspberry Pi.</li>
+            <li>Install the UV light and fan inside the trap.</li>
+            <li>Connect the relay module to control the fan.</li>
+            <li>Power the system using a 12V power supply.</li>
+            <li>Ensure stable internet connection.</li>
+          </ol>
+        </div>
+
+        <div class="card">
+          <h2>SYSTEM OPERATION</h2>
+          <p>
+            Once powered on, the system automatically activates the camera and UV light.
+            Mosquitoes attracted by the UV light are captured by the fan trap and detected
+            using the YOLO-based machine learning model.
+          </p>
+          <h3 style="color: #333333; margin-top: 20px; font-size: 14px;">SAFETY GUIDELINES</h3>
+          <p>
+            Always turn off the power before servicing the system. Avoid direct exposure
+            to UV light and ensure proper insulation of electrical components. Keep the
+            system away from moisture and ensure proper ventilation.
+          </p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="manual.js"></script>
+</body>
+
+</html>

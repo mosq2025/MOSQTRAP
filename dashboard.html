@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mosquito Dashboard</title>
+  <link rel="stylesheet" href="dashboard.css">
+  <!-- Supabase & Config for cloud backend connection -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+</head>
+
+<body>
+
+  <div class="container">
+    <!-- MOBILE SIDEBAR OVERLAY -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- SIDEBAR -->
+    <button class="hamburger" id="hamburger" aria-label="Toggle menu" aria-expanded="false">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+
+    <div class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <h3>MOSTRAP</h3>
+      </div>
+      <div class="nav-item"><img src="icon/dashboard.png" alt="home" class="nav-icon"> Main Dashboard</div>
+      <div id="navHistory" class="nav-item"><img src="icon/history.png" alt="history" class="nav-icon"> History</div>
+      <div id="navManual" class="nav-item"><img src="icon/settings.png" alt="manual" class="nav-icon"> Manual</div>
+      <div id="navContact" class="nav-item"><img src="icon/contact.png" alt="contact" class="nav-icon"> Contact
+      </div>
+
+      <div class="signout" id="signoutBtn"><img src="icon/logout.png" alt="logout" class="nav-icon"> Sign Out</div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="main">
+
+      <!-- TOP BAR -->
+      <div class="top-bar">
+        <div id="datetime"></div>
+        <div id="notificationBell" style="cursor: pointer; font-size: 20px;">🔔</div>
+      </div>
+
+      <!-- NOTIFICATIONS MODAL -->
+      <div id="notificationsModal"
+        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.3); z-index: 2000; overflow: hidden;">
+        <div
+          style="position: fixed; top: 80px; right: 20px; width: 420px; background: white; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.15); z-index: 2001; max-height: 70vh; overflow-y: auto;">
+          <div
+            style="padding: 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: white;">
+            <div>
+              <h2 style="margin: 0; font-size: 18px; color: #163d2e;">Notifications</h2>
+              <small style="color: #999;">Demo data</small>
+            </div>
+            <button id="closeNotifications"
+              style="background: none; border: none; font-size: 24px; cursor: pointer; color: #999;">✕</button>
+          </div>
+          <div id="notificationsContainer" style="padding: 20px;"></div>
+        </div>
+      </div>
+
+      <!-- DASHBOARD GRID -->
+      <div class="grid">
+
+        <!-- MOSQUITO COUNT -->
+        <div class="card">
+          <h2>MOSQUITO COUNT</h2>
+          <small>updated:</small>
+
+          <div class="count-box">
+            <div class="count" id="mosquitoCount">0</div>
+            <div class="safe">SAFE</div>
+          </div>
+        </div>
+
+        <!-- 3 DAY REPORT -->
+        <div class="card">
+          <h2>3 Day Report</h2>
+          <canvas id="chart"></canvas>
+        </div>
+      </div>
+
+      <!-- RISK ASSESSMENT -->
+      <div class="risk" id="riskAssessment">
+        <h2>RISK ASSESSMENT</h2>
+
+        <div class="risk-grid">
+          <div class="risk-box">
+            <h3>3 DAY ASSESSMENT</h3>
+            <p><strong>SAFE</strong></p>
+            <p class="arrow">→ <span id="fogCount">0</span></p>
+          </div>
+
+          <div class="risk-box">
+            <h3>RECOMMENDATION ACTIONS</h3>
+            <ul>
+              <li>Continue monitoring</li>
+              <li>No fogging required</li>
+              <li>Maintain cleanliness</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="dashboard.js?v=3.0"></script>
+</body>
+
+</html>
