@@ -260,7 +260,7 @@ def activation_scheduler():
 # ─── Tunable Parameters ───────────────────────────────────────────────────────
 
 # YOLO confidence threshold (0.0–1.0). Only detections above this are counted.
-CONFIDENCE_THRESHOLD = 0.25
+CONFIDENCE_THRESHOLD = 0.5
 
 # Number of consecutive frames a detection must appear before we count it.
 # 2 frames is a very fast decision (almost instant) but filters out 1-frame glitches.
@@ -274,10 +274,34 @@ ABSENT_FRAMES_THRESHOLD = 60
 SHRINK_FACTOR = 0.1
 
 # Camera device index (0 = default/built-in webcam, 1 = external/secondary webcam).
-CAMERA_ID = 1
+CAMERA_ID = 0
 
 # Path to your trained YOLO model weights (ONNX format).
 MODEL_PATH = os.path.join(os.path.dirname(__file__), "best.onnx")
+
+# IoU threshold for identity check (0.0–1.0).
+# If a new detection overlaps the last confirmed box by more than this fraction,
+# it is treated as the SAME mosquito (no re-count). Lower = stricter identity
+# (more tolerant of movement). 0.05 works well for fast-moving insects.
+IOU_RECOUNT_THRESHOLD = 0.05
+
+
+# ─── IoU Helper ───────────────────────────────────────────────────────────────
+def compute_iou(boxA, boxB):
+    """Compute Intersection-over-Union between two (x1,y1,x2,y2) boxes."""
+    xA = max(boxA[0], boxB[0])
+    yA = max(boxA[1], boxB[1])
+    xB = min(boxA[2], boxB[2])
+    yB = min(boxA[3], boxB[3])
+    inter_w = max(0, xB - xA)
+    inter_h = max(0, yB - yA)
+    inter_area = inter_w * inter_h
+    if inter_area == 0:
+        return 0.0
+    area_a = max(0, boxA[2] - boxA[0]) * max(0, boxA[3] - boxA[1])
+    area_b = max(0, boxB[2] - boxB[0]) * max(0, boxB[3] - boxB[1])
+    union_area = area_a + area_b - inter_area
+    return inter_area / union_area if union_area > 0 else 0.0
 
 
 # ─── Detection Thread ────────────────────────────────────────────────────────-
@@ -301,17 +325,19 @@ def run_detection():
         return
         
     # Request Full HD resolution to use the entire camera sensor
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 860)
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 960)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 520)
     
+    
     # Force the camera's hardware/digital zoom to zoom all the way out
-    cap.set(cv2.CAP_PROP_ZOOM, -200)
+    cap.set(cv2.CAP_PROP_ZOOM, 0)
 
-    consecutive_hits = 0
-    absent_frames   = 0      # frames with no detection since last confirmed hit
-    mosquito_present = False # True while a mosquito is still in the frame
-    last_box = None          # store last detected bounding box for drawing
-    last_label = "mosquito"  # store detected species/variant name
+    consecutive_hits  = 0
+    absent_frames     = 0      # frames with no detection since last confirmed hit
+    mosquito_present  = False  # True while a mosquito is still in the frame
+    last_box          = None   # store last detected bounding box for drawing
+    last_label        = "mosquito"  # store detected species/variant name
+    confirmed_box     = None   # bounding box of the last COUNTED mosquito (for IoU check)
 
     is_running = True
     print("[INFO] Camera started. YOLO detection running.")
@@ -382,8 +408,23 @@ def run_detection():
 
         # ── Update persistence counter & presence tracking ───────────────────
         if found_qualifying:
-            consecutive_hits += 1
-            absent_frames = 0          # reset absence timer while mosquito is visible
+            # ── IoU identity check: is this the same mosquito we already counted? ──
+            iou_with_confirmed = (
+                compute_iou(last_box, confirmed_box)
+                if (last_box is not None and confirmed_box is not None)
+                else 0.0
+            )
+            same_individual = mosquito_present and iou_with_confirmed > IOU_RECOUNT_THRESHOLD
+
+            if same_individual:
+                # Same mosquito detected again — keep it "present", reset absence
+                # timer, but do NOT increment consecutive_hits toward a new count.
+                absent_frames = 0
+                consecutive_hits = 0   # no new count needed
+            else:
+                # Either no confirmed mosquito yet, or a genuinely different position
+                consecutive_hits += 1
+                absent_frames = 0
         else:
             consecutive_hits = 0
             last_box = None
@@ -394,7 +435,8 @@ def run_detection():
                 if mosquito_present:
                     print("[INFO] Mosquito left the frame — ready for next entry.")
                 mosquito_present = False
-                absent_frames = 0
+                confirmed_box    = None
+                absent_frames    = 0
 
         # ── Trigger confirmed detection (new entry only) ──────────────────────
         if (
@@ -402,6 +444,7 @@ def run_detection():
             and not mosquito_present          # only count a fresh entry
         ):
             mosquito_present = True   # mark this mosquito as "currently in frame"
+            confirmed_box    = last_box  # remember WHERE this mosquito was confirmed
             consecutive_hits = 0
             detection_count += 1
 

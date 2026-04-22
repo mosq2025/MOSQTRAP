@@ -144,6 +144,7 @@ body {
 }
 
 .nav-item:hover { background: rgba(31,122,67,0.06); }
+.nav-item.active { background: rgba(31,122,67,0.06); border-radius: 12px; padding: 14px 10px; }
 
 .signout {
   margin-top: auto;
