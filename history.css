@@ -1,79 +1,214 @@
 /* Basic styles for the History page */
-:root{
-  --bg:#f7f9f8; --panel:#fff; --muted:#6b6969; --accent:#2c7a2f;
+
+.panel {
+  max-width: 1100px;
+  margin: 0 auto;
+  background: var(--card-bg);
+  padding: 18px;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
 }
-body{font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;margin:0;background:#f4fbf6;color:#163d2e}
-.panel{max-width:1100px;margin:0 auto;background:var(--panel);padding:18px;border-radius:6px;box-shadow:0 2px 0 rgba(0,0,0,0.06)}
-.back-btn{display:inline-block;margin-bottom:8px;color:#2c7a2f;text-decoration:none;font-size:14px}
-.back-btn:hover{text-decoration:underline}
-.panel h2{margin:0 0 18px;font-size:26px;font-weight:700}
+
+.back-btn {
+  display: inline-block;
+  margin-bottom: 8px;
+  color: var(--accent-color);
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.back-btn:hover {
+  text-decoration: underline;
+}
+
+.panel h2 {
+  margin: 0 0 18px;
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--accent-color);
+}
 
 /* History-specific tweaks to match screenshot layout */
-.history-panel{padding:32px 40px;border-radius:10px;background:#fff;box-shadow:0 8px 20px rgba(18,52,38,0.04)}
+.history-panel {
+  padding: 32px 40px;
+  border-radius: var(--radius-lg);
+  background: var(--card-bg);
+  box-shadow: var(--shadow-md);
+  transition: var(--transition);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
 
-.controls{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
-.controls .left{display:flex;gap:12px;align-items:center}
-.controls .right{display:flex;gap:8px;align-items:center}
-.date-range input{padding:10px 12px;border:1px solid #e6e6e6;border-radius:6px;background:#fff;font-size:15px}
-#searchDate{width:480px;padding:12px;border:1px solid #e9e9e9;border-radius:6px;font-size:15px}
-.actions .btn{padding:8px 12px;border-radius:6px}
-.btn.green{background:#1f7a43;border-color:#1f7a43;color:#fff}
+.history-panel:hover {
+  box-shadow: var(--shadow-hover);
+}
 
-.table-wrap{margin-top:6px}
-table{width:100%;border-collapse:collapse}
-th,td{padding:22px 16px;border-bottom:1px solid #f1f1f1}
-th{font-weight:700;color:#234c37;font-size:16px}
-td{color:#4b4b4b;font-size:15px}
-.footer{margin-top:18px}
+.controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
 
-/* Sidebar active state */
-.nav-item.active{background:rgba(31,122,67,0.06);border-radius:12px;padding:14px 10px}
+.controls .left {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.controls .right {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.date-range input {
+  padding: 10px 12px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: var(--radius-sm);
+  background: var(--card-bg);
+  font-size: 15px;
+  font-family: inherit;
+  transition: var(--transition);
+}
+
+.date-range input:focus {
+  outline: none;
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 3px var(--accent-light);
+}
+
+#searchDate {
+  width: 480px;
+  padding: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: var(--radius-sm);
+  font-size: 15px;
+  font-family: inherit;
+  transition: var(--transition);
+}
+
+#searchDate:focus {
+  outline: none;
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 3px var(--accent-light);
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+.actions .btn {
+  padding: 10px 16px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 600;
+  transition: var(--transition);
+  border: 1px solid transparent;
+}
+
+.actions .btn:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn.green {
+  background: var(--accent-color);
+  color: #fff;
+}
+
+.table-wrap {
+  margin-top: 16px;
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  padding: 18px 16px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  text-align: left;
+}
+
+th {
+  font-weight: 700;
+  color: var(--accent-color);
+  font-size: 16px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+td {
+  color: var(--text-secondary);
+  font-size: 15px;
+}
+
+tr:hover td {
+  background: rgba(15, 111, 69, 0.02);
+}
+
+.footer {
+  margin-top: 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
 
 /* top-bar tweaks for history page */
-.top-bar{display:flex;justify-content:space-between;align-items:center;padding:18px 28px;margin-bottom:14px}
-
-.notif{border:1px solid #e6e6e6;padding:8px 10px;border-radius:8px;background:#fff;display:flex;align-items:center;gap:8px}
-.badge{background:#f24;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;margin-left:6px}
-
-@media (max-width:900px){
-  #searchDate{width:100%}
-  .controls{flex-direction:column;align-items:stretch}
-}
-.controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
-.controls .date-range input{padding:6px;border:1px solid #dcdcdc;border-radius:4px}
-#searchDate{flex:1;min-width:180px;padding:8px;border:1px solid #e6e6e6;border-radius:4px}
-.actions{display:flex;gap:6px}
-.btn{padding:6px 10px;border-radius:4px;border:1px solid #bdbdbd;background:#fff;cursor:pointer}
-.btn.green{background:var(--accent);color:#fff;border-color:var(--accent)}
-.table-wrap{overflow:auto;border-top:1px solid #eee;border-bottom:1px solid #eee}
-table{width:100%;border-collapse:collapse;margin-top:8px}
-th,td{padding:14px 12px;text-align:left;border-bottom:1px solid #f0f0f0}
-th{color:#333;font-size:14px}
-td{color:#444;font-size:13px}
-.footer{display:flex;justify-content:space-between;align-items:center;margin-top:12px;color:var(--muted)}
-.pagination{font-size:13px}
-
-@media (max-width:600px){
-  .controls{flex-direction:column;align-items:stretch}
-  #searchDate{order:3}
-  .actions{order:4}
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 28px;
+  margin-bottom: 14px;
 }
 
+.notif {
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--card-bg);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: var(--shadow-sm);
+}
 
+.badge {
+  background: #f24;
+  color: #fff;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  margin-left: 6px;
+}
 
 @media (max-width: 900px) {
-  /* Fix hamburger so it's always visible and tappable on mobile */
-  .hamburger {
-    position: fixed !important;
-    left: 14px !important;
-    top: 14px !important;
-    z-index: 1200 !important;
-    width: 44px !important;
-    height: 44px !important;
-    box-shadow: 0 4px 16px rgba(18,52,38,0.14) !important;
+  #searchDate {
+    width: 100%;
   }
 
-  .main {
-    padding-top: 70px !important;
+  .controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .controls .left, .controls .right {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+  }
+}
+
+@media (max-width: 600px) {
+  .actions {
+    flex-direction: column;
   }
 }

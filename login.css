@@ -1,8 +1,10 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  font-family: "Segoe UI", sans-serif;
+  font-family: 'Outfit', sans-serif;
 }
 
 body {
@@ -18,7 +20,7 @@ body {
 /* LEFT SIDE */
 .left-panel {
   width: 40%;
-  background: #ebf8e9;
+  background: linear-gradient(135deg, #eaf7ef 0%, #d5f3d1 100%);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -29,8 +31,10 @@ body {
 .left-panel h1 {
   position: absolute;
   top: 40px;
-  font-size: 26px;
+  font-size: 28px;
   letter-spacing: 2px;
+  color: #0f6f45;
+  font-weight: 800;
 }
 
 .lantern {
@@ -43,7 +47,7 @@ body {
 /* RIGHT SIDE */
 .right-panel {
   width: 60%;
-  background: #eefaf0;
+  background: #f4fbf6;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -51,15 +55,24 @@ body {
 
 .login-card {
   background: #fff;
-  padding: 35px;
-  width: 360px;
-  border-radius: 12px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  padding: 40px;
+  width: 400px;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(15, 111, 69, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  transition: all 0.3s ease;
+}
+
+.login-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 40px rgba(15, 111, 69, 0.12);
 }
 
 .login-card h2 {
   text-align: center;
-  color: #2e7d32;
+  color: #0f6f45;
+  font-weight: 800;
+  font-size: 24px;
 }
 
 .subtitle {
@@ -105,17 +118,21 @@ body {
 
 button {
   width: 100%;
-  padding: 10px;
-  background: #2e7d32;
+  padding: 12px;
+  background: #0f6f45;
   color: #fff;
   border: none;
-  border-radius: 20px;
+  border-radius: 8px;
   cursor: pointer;
-  font-weight: bold;
+  font-weight: 700;
+  font-size: 15px;
+  transition: all 0.3s ease;
 }
 
 button:hover {
-  background: #256428;
+  background: #0a5232;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(15,111,69,0.2);
 }
 
 .footer-text {
