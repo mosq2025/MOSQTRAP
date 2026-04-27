@@ -38,55 +38,200 @@
     <!-- MAIN CONTENT -->
     <div class="main">
 
-      <!-- MANUAL GRID -->
-      <div class="grid">
-        <div class="card">
-          <h2>SYSTEM COMPONENTS</h2>
-          <ul>
-            <li>Raspberry Pi 5</li>
-            <li>Camera Module</li>
-            <li>UV Light Attractor</li>
-            <li>Fan Trap Mechanism</li>
-            <li>Relay Module</li>
-            <li>12V Power Supply</li>
-            <li>Web-based Dashboard</li>
-          </ul>
+      <!-- MANUAL INFOGRAPHIC -->
+      <div class="manual-infographic">
+        <div class="column col-left">
+          <div class="manual-header">
+            <img src="icon/ChatGPT_Image_Jan_30__2026__05_15_22_PM-removebg-preview.png" alt="Logo" class="logo-img">
+            <h1>MOSTRAP: MOSQUITO SMART TRAP FOR REAL-TIME ASSESSMENT AND PREVENTION OF AEDES AEGYPTI INFESTATION</h1>
+          </div>
+
+          <div class="section">
+            <h2 class="section-title"><span class="triangle"></span> SYSTEM OVERVIEW</h2>
+            <p>MOSTRAP consists of the following Key Components:</p>
+            <ul>
+              <li>Raspberry Pi (Main Processor)</li>
+              <li>Webcamera Module (Image Capture)</li>
+              <li>UV-LED Light (Mosquito attractant and Illumination)</li>
+              <li>Suction Fan (Capture Mechanism)</li>
+              <li>Collection Tray (Mosquito Chamber)</li>
+              <li>Web-based Dashboard (Monitoring Interface)</li>
+            </ul>
+            <p style="margin-top: 10px;">The system detects mosquitos using image processing and logs data for real-time monitoring and analysis</p>
+          </div>
+          
+          <hr class="divider">
+
+          <div class="section">
+            <h2 class="section-title"><span class="triangle"></span> HARDWARE REQUIREMENT</h2>
+            <ul>
+              <li>Stable 12V power supply</li>
+              <li>Wi-Fi connection</li>
+              <li>MOSTRAP device (fully assembled)</li>
+            </ul>
+          </div>
+
+          <div class="section">
+            <h2 class="section-title"><span class="triangle"></span> SOFTWARE REQUIREMENT</h2>
+            <ul>
+              <li>Web browser (Chrome, Edge, etc.)</li>
+              <li>Internet connection for dashboard access</li>
+            </ul>
+          </div>
+
+          <div class="section">
+            <h2 class="section-title"><span class="triangle"></span> FEATURES</h2>
+            <ul>
+              <li>Real-time mosquito detection</li>
+              <li>Automated counting and logging</li>
+              <li>Early Warning Alerts (EWA)</li>
+              <li>Web-based monitoring dashboard</li>
+              <li>Data storage and trend analysis</li>
+              <li>Remote access via cloud database</li>
+            </ul>
+          </div>
         </div>
 
-        <div class="card">
-          <h2>MAINTENANCE</h2>
-          <ul>
-            <li>Clean the trap weekly</li>
-            <li>Check camera lens for dust</li>
-            <li>Ensure UV light is functioning</li>
-            <li>Verify power connections</li>
-          </ul>
+        <div class="column col-middle">
+          <div class="diagram-placeholder">
+            <div class="diagram-box" style="aspect-ratio: auto; border: none; background: transparent;">
+              <img src="icon/Prototype.png" alt="Device Components Diagram" style="width: 100%; height: auto; border-radius: 8px;">
+            </div>
+          </div>
+
+          <div class="section">
+            <h2 class="section-title"><span class="triangle"></span> INSTALLATION GUIDE</h2>
+            <h3>Device Placement</h3>
+            <ul>
+              <li>Place the device in areas prone to mosquito activity (e.g., near stagnant water, shaded outdoor areas).</li>
+              <li>Ensure the device is elevated or securely positioned.</li>
+              <li>Avoid direct exposure to heavy rain or extreme sunlight.</li>
+            </ul>
+            <h3>Power Setup</h3>
+            <ol>
+              <li>Connect the device to a power source (12V supply).</li>
+              <li>Turn ON the rocker switch.</li>
+              <li>Wait for the system to initialize.</li>
+            </ol>
+            <h3>Wi-Fi Connection</h3>
+            <ul>
+              <li>The system automatically searches for available networks.</li>
+              <li>Ensure stable internet connection for real-time data syncing.</li>
+            </ul>
+          </div>
+
+          <div class="section">
+            <h2 class="section-title"><span class="triangle"></span> MAINTENANCE GUIDE</h2>
+            <h3>Cleaning</h3>
+            <ul>
+              <li>Empty the collection tray regularly</li>
+              <li>Clean mesh and fan area to prevent clogging</li>
+            </ul>
+            <h3>Inspection</h3>
+            <ul>
+              <li>Check wiring and power connections</li>
+              <li>Ensure camera lens is clean</li>
+            </ul>
+            <h3>Software Maintenance</h3>
+            <ul>
+              <li>Ensure stable internet for updates</li>
+              <li>Monitor dashboard for system alerts</li>
+            </ul>
+          </div>
         </div>
 
-        <div class="card">
-          <h2>SYSTEM SETUP</h2>
-          <ol>
-            <li>Connect the camera to the Raspberry Pi.</li>
-            <li>Install the UV light and fan inside the trap.</li>
-            <li>Connect the relay module to control the fan.</li>
-            <li>Power the system using a 12V power supply.</li>
-            <li>Ensure stable internet connection.</li>
-          </ol>
-        </div>
+        <div class="column col-right">
+          <div class="section">
+            <h2 class="section-title"><span class="triangle"></span> OPERATING INSTRUCTIONS</h2>
+            <h3>Starting the System</h3>
+            <ol>
+              <li>Turn ON the device.</li>
+              <li>The system initializes all components (camera, sensors, fan, and Wi-Fi).</li>
+              <li>The device enters monitoring mode during scheduled hours.</li>
+            </ol>
+            <h3>Monitoring Process</h3>
+            <ul>
+              <li>UV light attracts mosquitoes</li>
+              <li>Fan pulls mosquitoes into the trap</li>
+              <li>Camera captures images</li>
+              <li>System identifies if the insect is a mosquito</li>
+              <li>Data is logged and analyzed</li>
+            </ul>
+            <h3>Accessing the Dashboard</h3>
+            <ol>
+              <li>Open the web application</li>
+              <li>Log in using your credentials</li>
+              <li>Navigate through:
+                <ul class="sub-list">
+                  <li>Dashboard (real-time data)</li>
+                  <li>Risk Assessment</li>
+                  <li>History Logs</li>
+                  <li>Notifications</li>
+                </ul>
+              </li>
+            </ol>
+          </div>
 
-        <div class="card">
-          <h2>SYSTEM OPERATION</h2>
-          <p>
-            Once powered on, the system automatically activates the camera and UV light.
-            Mosquitoes attracted by the UV light are captured by the fan trap and detected
-            using the YOLO-based machine learning model.
-          </p>
-          <h3 style="color: #333333; margin-top: 20px; font-size: 14px;">SAFETY GUIDELINES</h3>
-          <p>
-            Always turn off the power before servicing the system. Avoid direct exposure
-            to UV light and ensure proper insulation of electrical components. Keep the
-            system away from moisture and ensure proper ventilation.
-          </p>
+          <div class="section">
+            <h2 class="section-title"><span class="triangle"></span> TROUBLESHOOTING</h2>
+            <table class="trouble-table">
+              <tr>
+                <th>Problem</th>
+                <th>Possible Cause</th>
+                <th>Solution</th>
+              </tr>
+              <tr>
+                <td>Device not turning on</td>
+                <td>Power Issue</td>
+                <td>Check power supply & switch</td>
+              </tr>
+              <tr>
+                <td>No Wi-Fi connection</td>
+                <td>Weak Signal</td>
+                <td>Move closer to router</td>
+              </tr>
+              <tr>
+                <td>No data on dashboard</td>
+                <td>Sync Failure</td>
+                <td>Restart Device</td>
+              </tr>
+              <tr>
+                <td>Inaccurate detection</td>
+                <td>Dirty Camera</td>
+                <td>Clean lens</td>
+              </tr>
+              <tr>
+                <td>Weak suction</td>
+                <td>Fan Obstruction</td>
+                <td>Clean damper</td>
+              </tr>
+            </table>
+          </div>
+
+          <div class="section">
+            <h2 class="section-title"><span class="triangle"></span> SAFETY PRECAUTIONS</h2>
+            <ul>
+              <li>Do not expose the device to water directly</li>
+              <li>Use proper voltage supply only</li>
+              <li>Keep away from children during operation</li>
+              <li>Turn off before maintenance</li>
+            </ul>
+          </div>
+
+          <div class="section">
+            <h2 class="section-title"><span class="triangle"></span> LIMITATIONS</h2>
+            <ul>
+              <li>The system does not kill mosquitoes; it only monitors and captures</li>
+              <li>Performance may be affected by:
+                <ul class="sub-list-none">
+                  <li>Weather conditions</li>
+                  <li>Lighting variations</li>
+                  <li>Internet connectivity issues</li>
+                  <li>Power Outage</li>
+                </ul>
+              </li>
+            </ul>
+          </div>
         </div>
       </div>
 

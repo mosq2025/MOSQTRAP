@@ -188,44 +188,140 @@ body {
 
 .status { font-weight: 700; color: #234c37; }
 
-/* GRID */
-.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
-
-.card {
-  background: #ffffff;
-  border-radius: 10px;
-  margin: 2px 0;
-  padding: 10px;
+/* INFOGRAPHIC LAYOUT */
+.manual-infographic {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 24px;
+  background: transparent;
   color: #163d2e;
-  box-shadow: 0 6px 20px rgba(20,60,40,0.04);
-  min-height: 320px;
+}
+
+@media (max-width: 1200px) {
+  .manual-infographic {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 800px) {
+  .manual-infographic {
+    grid-template-columns: 1fr;
+  }
+}
+
+.manual-header {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
 }
 
-.card h2 { margin-top: 0; color: #0f6f45; font-size: 18px; font-weight: 700; }
-
-.grid .card:nth-child(-n+4) h2 {
-  text-align: center;
+.logo-img {
+  width: 60px;
+  height: auto;
+  flex-shrink: 0;
 }
 
-.card ul, .card ol {
-  margin: 2px 0;
+.manual-header h1 {
+  font-size: 16px;
+  color: #6da387;
+  margin: 0;
+  line-height: 1.4;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.divider {
+  border: 0;
+  border-top: 1px solid #c0d8ca;
+  margin: 16px 0;
+}
+
+.section {
+  margin-bottom: 24px;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  font-size: 16px;
+  color: #6da387;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  font-weight: 700;
+}
+
+.triangle {
+  width: 0;
+  height: 0;
+  border-top: 8px solid transparent;
+  border-bottom: 8px solid transparent;
+  border-left: 12px solid #6da387;
+  margin-right: 8px;
+}
+
+.section h3 {
+  font-size: 14px;
+  font-weight: 700;
+  margin: 12px 0 4px 0;
+  color: #163d2e;
+}
+
+.section p {
+  font-size: 13px;
+  margin: 0 0 8px 0;
+  line-height: 1.5;
+}
+
+.section ul, .section ol {
+  margin: 0;
   padding-left: 20px;
-  line-height: 1.8;
+  font-size: 13px;
+  line-height: 1.5;
 }
 
-.card li {
-  margin-bottom: 2px;
-  color: #234c37;
+.section li {
+  margin-bottom: 4px;
 }
 
-.card p {
-  margin: 2px 0;
-  line-height: 1.6;
-  color: #234c37;
+.sub-list {
+  list-style-type: circle;
+  padding-left: 16px;
+  margin-top: 4px;
 }
 
-@media (max-width: 900px) {
-  .grid { grid-template-columns: 1fr; }
+.sub-list-none {
+  list-style-type: none;
+  padding-left: 16px;
+  margin-top: 4px;
+}
+
+.diagram-placeholder {
+  margin-bottom: 24px;
+}
+
+.diagram-box {
+  width: 100%;
+  aspect-ratio: 4/3;
+  border: 4px solid #163d2e;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+}
+
+.trouble-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  margin-top: 8px;
+}
+
+.trouble-table th, .trouble-table td {
+  text-align: center;
+  padding: 6px;
+}
+
+.trouble-table th {
+  font-weight: 700;
 }

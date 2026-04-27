@@ -591,6 +591,8 @@ def on_disconnect():
 def on_start_camera():
     global camera_thread, is_running
     if not is_running:
+        # When triggered via SocketIO (e.g. restart after stop),
+        # run in a background thread since the main thread owns the initial session.
         camera_thread = threading.Thread(target=run_detection, daemon=True)
         camera_thread.start()
         emit("camera_status", {"running": True})
@@ -612,8 +614,16 @@ def on_reset_count():
 # ─── Entry Point ──────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    camera_thread = threading.Thread(target=run_detection, daemon=True)
-    camera_thread.start()
+    # Flask must run in a background thread on Windows so that cv2.imshow/waitKey
+    # can be called from the main thread (OpenCV GUI requirement on Windows).
+    flask_thread = threading.Thread(
+        target=lambda: socketio.run(
+            app, host="0.0.0.0", port=5000,
+            debug=False, use_reloader=False, allow_unsafe_werkzeug=True
+        ),
+        daemon=True
+    )
+    flask_thread.start()
 
     scheduler_thread = threading.Thread(target=activation_scheduler, daemon=True)
     scheduler_thread.start()
@@ -624,7 +634,8 @@ if __name__ == "__main__":
     print("=" * 55)
 
     try:
-        socketio.run(app, host="0.0.0.0", port=5000, debug=False, use_reloader=False, allow_unsafe_werkzeug=True)
+        # Run camera (cv2.imshow/waitKey) on the MAIN thread — required on Windows
+        run_detection()
     except KeyboardInterrupt:
         print("\n[INFO] Server stopped by user.")
         is_running = False
