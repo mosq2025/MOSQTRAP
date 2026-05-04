@@ -59,48 +59,82 @@ document.addEventListener('DOMContentLoaded', function () {
         }
       });
       
-      const dates = Object.keys(rawData).sort((a, b) => new Date(b) - new Date(a));
-      historyData = [];
+      // Sort oldest to newest to group into windows
+      const datesAsc = Object.keys(rawData).sort((a, b) => new Date(a) - new Date(b));
       
+      const periods = [];
+      let currentPeriod = null;
+
+      datesAsc.forEach(dateStr => {
+        if (!currentPeriod) {
+           currentPeriod = {
+             startDate: dateStr,
+             endDate: dateStr,
+             mosquitoes: rawData[dateStr].mosquitoes,
+             lastUpdated: rawData[dateStr].lastUpdated,
+           };
+        } else {
+           const startD = new Date(currentPeriod.startDate);
+           const currD = new Date(dateStr);
+           const diffDays = Math.floor((currD - startD) / (1000 * 60 * 60 * 24));
+           
+           if (diffDays < 3) { 
+              // Still within the 3-day window
+              currentPeriod.endDate = dateStr;
+              currentPeriod.mosquitoes += rawData[dateStr].mosquitoes;
+              if (rawData[dateStr].lastUpdated > currentPeriod.lastUpdated) {
+                 currentPeriod.lastUpdated = rawData[dateStr].lastUpdated;
+              }
+           } else {
+              // Finish current period and start a new one
+              periods.push(currentPeriod);
+              currentPeriod = {
+                 startDate: dateStr,
+                 endDate: dateStr,
+                 mosquitoes: rawData[dateStr].mosquitoes,
+                 lastUpdated: rawData[dateStr].lastUpdated,
+              };
+           }
+        }
+      });
+      if (currentPeriod) periods.push(currentPeriod);
+
+      // Sort newest to oldest for display
+      periods.sort((a, b) => new Date(b.startDate) - new Date(a.startDate));
+
+      historyData = [];
       const tbody = table.tBodies[0];
       tbody.innerHTML = '';
       
-      if (dates.length === 0) {
+      if (periods.length === 0) {
         tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No history data found</td></tr>';
         return;
       }
 
-      dates.forEach(dateStr => {
-        const item = rawData[dateStr];
+      periods.forEach(p => {
+        // Calculate the 3-day window from the start date for a clean range string
+        const startD = new Date(p.startDate);
+        const endOfWindow = new Date(startD);
+        endOfWindow.setDate(startD.getDate() + 2);
         
-        // Calculate 3-day total for risk assessment
-        let threeDayTotal = item.mosquitoes;
-        for (let offset = 1; offset <= 2; offset++) {
-          const d = new Date(dateStr);
-          d.setDate(d.getDate() - offset);
-          const pastStr = d.toISOString().split('T')[0];
-          if (rawData[pastStr]) {
-            threeDayTotal += rawData[pastStr].mosquitoes;
-          }
-        }
+        const dateRangeStr = `${p.startDate} to ${endOfWindow.toISOString().split('T')[0]}`;
         
-        const risk = classifyByThreeDay(threeDayTotal);
+        const risk = classifyByThreeDay(p.mosquitoes);
         
-        // Format last updated nice string
-        const lu = new Date(item.lastUpdated);
+        const lu = new Date(p.lastUpdated);
         const lastUpdatedStr = lu.toLocaleDateString() + ', ' + lu.toLocaleTimeString();
 
         historyData.push({
-          date: dateStr,
-          mosquitoes: threeDayTotal > 0 ? threeDayTotal : '—',
+          date: dateRangeStr,
+          mosquitoes: p.mosquitoes > 0 ? p.mosquitoes : '—',
           riskAssessment: risk,
           lastUpdated: lastUpdatedStr
         });
         
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td>${dateStr}</td>
-          <td>${threeDayTotal}</td>
+          <td>${dateRangeStr}</td>
+          <td>${p.mosquitoes}</td>
           <td>${risk}</td>
           <td>${lastUpdatedStr}</td>
         `;
@@ -114,8 +148,8 @@ document.addEventListener('DOMContentLoaded', function () {
       const visibleRows = Array.from(tbody.rows).filter(r => r.style.display !== 'none').length;
       const paginationEl = document.querySelector('.pagination');
       if (paginationEl) {
-         if (dates.length > 0) {
-           paginationEl.textContent = `1 - ${visibleRows} of ${dates.length}`;
+         if (periods.length > 0) {
+           paginationEl.textContent = `1 - ${visibleRows} of ${periods.length}`;
          } else {
            paginationEl.textContent = '0 - 0 of 0';
          }
@@ -156,25 +190,51 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  function downloadCSV() {
+  function downloadPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    
+    // Header text
+    doc.setFontSize(18);
+    doc.text("MOSTRAP - History Report", 14, 22);
+    
+    // Add subtitle with date range if filtered
+    doc.setFontSize(11);
+    const dateText = `Generated on: ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}`;
+    doc.text(dateText, 14, 30);
+    
+    // Get visible rows only
     const rows = Array.from(table.tBodies[0].rows).filter(r => r.style.display !== 'none');
-    const cols = Array.from(table.tHead.rows[0].cells).map(c => c.textContent.trim());
-    const lines = [cols.join(',')];
-    rows.forEach(r => {
-      const vals = Array.from(r.cells).map(c => `"${c.textContent.replace(/"/g, '""')}"`);
-      lines.push(vals.join(','));
+    
+    // Prepare data for autoTable
+    const head = [Array.from(table.tHead.rows[0].cells).map(c => c.textContent.trim())];
+    const body = rows.map(r => Array.from(r.cells).map(c => c.textContent.trim()));
+    
+    // Generate table
+    doc.autoTable({
+      head: head,
+      body: body,
+      startY: 35,
+      theme: 'grid',
+      styles: {
+        fontSize: 10,
+        cellPadding: 3,
+      },
+      headStyles: {
+        fillColor: [43, 179, 133], // Match MOSTRAP green color
+        textColor: [255, 255, 255]
+      },
+      alternateRowStyles: {
+        fillColor: [245, 250, 248] // Very light green for alternating rows
+      }
     });
-    const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'history.csv';
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
+    
+    // Save the PDF
+    doc.save('mostrap_history.pdf');
   }
 
   applyBtn.addEventListener('click', applyFilter);
-  downloadBtn.addEventListener('click', downloadCSV);
+  downloadBtn.addEventListener('click', downloadPDF);
   // small convenience: filter as you type (debounced)
   let t;
   searchInput.addEventListener('input', () => { clearTimeout(t); t = setTimeout(applyFilter, 300) });
